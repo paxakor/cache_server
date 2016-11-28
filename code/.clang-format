@@ -1,0 +1,8 @@
+ColumnLimit: 80
+IndentWidth: 4
+Language: Cpp
+PointerBindsToType: true
+SpacesBeforeTrailingComments: 2
+Standard: Auto
+TabWidth: 4
+UseTab: Never

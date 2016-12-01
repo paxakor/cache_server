@@ -17,6 +17,7 @@
 #include "include/server.hpp"
 #include "include/socket.hpp"
 #include "include/utils.hpp"
+#include "include/log.hpp"
 
 namespace pkr {
 
@@ -62,8 +63,7 @@ void do_get(int client_socket, const char *url, const char *client_ip,
     } else {
         // write_headers_or_error(client_socket, 200, get_file_size(file_name),
         //     get_mime_type(file_name));
-        write_headers_or_error(client_socket, 200, 100500,
-            "mega mime type");
+        write_headers_or_error(client_socket, 200, 84, "mega mime type");
         char file_buffer[65536];
         while (1) {
             ssize_t byttes_read = read(f_id, file_buffer, sizeof(file_buffer));
@@ -114,42 +114,51 @@ void process_connection(int client_socket,
     close(client_socket);
 }
 
-ServerConfig read_config(const std::string& file_name) {
-    std::ifstream cfg_file(file_name);
-    std::string line;
+ServerConfig read_config(const std::string& file_name, Logger& log) {
     ServerConfig cfg;
+    std::ifstream cfg_file(file_name);
+    std::string line, err_msg;
+    uint64_t line_number = 0;
     while (std::getline(cfg_file, line)) {
+        ++line_number;
         const auto parts = split(line, 2);
-        bool error = false;
         if (parts.size() >= 2) {
             if (parts[0] == "dir") {
-                cfg.pwd = parts[1];
-                error |= !fs::exists(cfg.pwd);
+                cfg.working_dir = parts[1];
+                fs::path p(cfg.working_dir);
+                if (!fs::exists(p) || !fs::is_directory(p)) {
+                    err_msg = "no such directory";
+                }
             } else if (parts[0] == "port") {
                 cfg.port = std::strtoul(parts[1].c_str(), NULL, 10);
-                error |= !(0 < cfg.port && cfg.port < ((1 << 16) - 1));  // TODO
+                if (!(1000 < cfg.port && cfg.port < ((1 << 16) - 1))) {  // TODO
+                    err_msg = "invalid port";
+                }
             } else {
-                error = true;
+                err_msg = "no such option";
             }
         } else {
-            error = true;
+            err_msg = "too few arguments";
         }
-        if (error) {
-            std::cerr << "Invalid config line: " << line << std::endl;
+        if (!err_msg.empty()) {
+            log.error("Invalid config line " + std::to_string(line_number) +
+                ": " + err_msg + ".");
         }
     }
     return cfg;
 }
 
-Server::Server(const ServerConfig& cfg)
-    : server_socket(cfg.port) {}
+Server::Server(const ServerConfig& cfg, Logger& log)
+    : log(log)
+    , server_socket(cfg.port)
+    , working_dir(cfg.working_dir) {}
 
 void Server::start() {
     while (1) {
         ClientSocket client;
         server_socket.accept(client);
         process_connection(client.get_handler(), &client.mutable_address(),
-            "/home/paxakor/programs/projects/server/files");
+            working_dir.c_str());
     }
 }
 

@@ -6,21 +6,25 @@
 #include <unistd.h>
 #include <string>
 #include <vector>
+#include "include/log.hpp"
 #include "include/socket.hpp"
 
 namespace pkr {
 
 struct ServerConfig {
-    std::string pwd;
-    uint16_t port = 31337;
+    std::string working_dir = "./";
+    uint32_t port = 31337;
 };
 
 class Server {
 public:
-    Server(const ServerConfig&);
+    Server(const ServerConfig&, Logger&);
     void start();
+
 private:
+    Logger& log;
     ServerSocket server_socket;
+    std::string working_dir;
 };
 
 enum command_t
@@ -45,6 +49,6 @@ void interact_connection(int client_socket, const char *client_ip,
 void process_connection(int client_socket,
     const struct sockaddr_in *client_address, const char *htdocs_dir);
 
-ServerConfig read_config(const std::string& file_name = "config.txt");
+ServerConfig read_config(const std::string& file_name, Logger&);
 
 }  // namespace pkr

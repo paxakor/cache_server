@@ -5,6 +5,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 set(SOURCES
+    src/log.cpp
     src/main.cpp
     src/server.cpp
     src/socket.cpp
@@ -13,6 +14,7 @@ set(SOURCES
 
 set(HEADERS
     include/filesystem.hpp
+    include/log.hpp
     include/server.hpp
     include/socket.hpp
     include/utils.hpp

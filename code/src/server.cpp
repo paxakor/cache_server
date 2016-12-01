@@ -102,18 +102,6 @@ void interact_connection(int client_socket, const char *client_ip,
     }
 }
 
-void process_connection(int client_socket,
-    const struct sockaddr_in *client_address, const char *htdocs_dir)
-{
-    char client_ip[INET_ADDRSTRLEN];
-    const struct in_addr client_ip_addr = client_address->sin_addr;
-    inet_ntop(AF_INET, &client_ip_addr, client_ip, sizeof(client_ip));
-    const uint16_t client_port = ntohs(client_address->sin_port);
-    // write_access_log(client_ip, client_port, "CONNECT", "", "OK");
-    interact_connection(client_socket, client_ip, client_port, htdocs_dir);
-    close(client_socket);
-}
-
 ServerConfig read_config(const std::string& file_name, Logger& log) {
     ServerConfig cfg;
     std::ifstream cfg_file(file_name);
@@ -157,9 +145,19 @@ void Server::start() {
     while (1) {
         ClientSocket client;
         server_socket.accept(client);
-        process_connection(client.get_handler(), &client.mutable_address(),
-            working_dir.c_str());
+        process_connection(client);
     }
+}
+
+void Server::process_connection(const ClientSocket& client) {
+    char client_ip[INET_ADDRSTRLEN];
+    const struct in_addr client_ip_addr = client.get_address().sin_addr;
+    inet_ntop(AF_INET, &client_ip_addr, client_ip, sizeof(client_ip));
+    const uint16_t client_port = ntohs(client.get_address().sin_port);
+    // write_access_log(client_ip, client_port, "CONNECT", "", "OK");
+    interact_connection(client.get_handler(), client_ip, client_port,
+        working_dir.c_str());
+    close(client.get_handler());
 }
 
 }  // namespace pkr

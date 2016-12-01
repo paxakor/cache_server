@@ -16,6 +16,7 @@ public:
     virtual ~Socket();
     int get_handler() const;
     void set_handler(int);
+    sockaddr_in get_address() const;
     sockaddr_in& mutable_address();
 
 protected:

@@ -22,6 +22,10 @@ void Socket::set_handler(int h) {
     handler = h;
 }
 
+sockaddr_in Socket::get_address() const {
+    return address;
+}
+
 sockaddr_in& Socket::mutable_address()  {
     return address;
 }

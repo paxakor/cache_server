@@ -22,6 +22,9 @@ public:
     void start();
 
 private:
+    void process_connection(const ClientSocket&);
+
+private:
     Logger& log;
     ServerSocket server_socket;
     std::string working_dir;
@@ -45,9 +48,6 @@ void parse_command(const char *recv_buffer, enum command_t *command,
 
 void interact_connection(int client_socket, const char *client_ip,
     const uint16_t client_port, const char *htdocs_dir);
-
-void process_connection(int client_socket,
-    const struct sockaddr_in *client_address, const char *htdocs_dir);
 
 ServerConfig read_config(const std::string& file_name, Logger&);
 

@@ -1,6 +1,10 @@
-#include <iostream>
+// Copyright 2016, Pavel Korozevtsev.
+
+#include "include/server.hpp"
 
 int main(int /* argc */, char** /* argv */) {
-    std::cout << "Hello HSE!" << std::endl;
+    const auto config = pkr::read_config();
+    pkr::Server srv(config);
+    srv.start();
     return 0;
 }

@@ -1,0 +1,2 @@
+dir /home/paxakor/programs/projects/server/files
+port 31337

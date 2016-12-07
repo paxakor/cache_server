@@ -4,20 +4,20 @@
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <cstdlib>
-#include <string>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include "include/filesystem.hpp"
+#include "include/log.hpp"
 #include "include/server.hpp"
 #include "include/socket.hpp"
 #include "include/utils.hpp"
-#include "include/log.hpp"
 
 namespace pkr {
 
@@ -102,8 +102,7 @@ void interact_connection(int client_socket, const char *client_ip,
     }
 }
 
-ServerConfig read_config(const std::string& file_name, Logger& log) {
-    ServerConfig cfg;
+ServerConfig::ServerConfig(const std::string& file_name) {
     std::ifstream cfg_file(file_name);
     std::string line, err_msg;
     uint64_t line_number = 0;
@@ -112,14 +111,14 @@ ServerConfig read_config(const std::string& file_name, Logger& log) {
         const auto parts = split(line, 2);
         if (parts.size() >= 2) {
             if (parts[0] == "dir") {
-                cfg.working_dir = parts[1];
-                fs::path p(cfg.working_dir);
+                working_dir = parts[1];
+                fs::path p(working_dir);
                 if (!fs::exists(p) || !fs::is_directory(p)) {
                     err_msg = "no such directory";
                 }
             } else if (parts[0] == "port") {
-                cfg.port = std::strtoul(parts[1].c_str(), NULL, 10);
-                if (!(1000 < cfg.port && cfg.port < ((1 << 16) - 1))) {  // TODO
+                port = std::strtoul(parts[1].c_str(), NULL, 10);
+                if (!(1000 < port && port < ((1 << 16) - 1))) {  // TODO
                     err_msg = "invalid port";
                 }
             } else {
@@ -133,13 +132,11 @@ ServerConfig read_config(const std::string& file_name, Logger& log) {
                 ": " + err_msg + ".");
         }
     }
-    return cfg;
 }
 
-Server::Server(const ServerConfig& cfg, Logger& log)
-    : log(log)
-    , server_socket(cfg.port)
-    , working_dir(cfg.working_dir) {}
+Server::Server(const ServerConfig& cfg)
+    : server_socket(cfg.port)
+    , working_dir(cfg.working_dir) { }
 
 void Server::start() {
     while (1) {
@@ -154,7 +151,7 @@ void Server::process_connection(const ClientSocket& client) {
     const struct in_addr client_ip_addr = client.get_address().sin_addr;
     inet_ntop(AF_INET, &client_ip_addr, client_ip, sizeof(client_ip));
     const uint16_t client_port = ntohs(client.get_address().sin_port);
-    // write_access_log(client_ip, client_port, "CONNECT", "", "OK");
+    log.access(client_ip, client_port);
     interact_connection(client.get_handler(), client_ip, client_port,
         working_dir.c_str());
     close(client.get_handler());

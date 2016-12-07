@@ -3,9 +3,9 @@
 #pragma once
 
 #include <cstdint>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <sys/socket.h>
 
 namespace pkr {
 

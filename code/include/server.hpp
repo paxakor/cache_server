@@ -6,26 +6,28 @@
 #include <unistd.h>
 #include <string>
 #include <vector>
-#include "include/log.hpp"
 #include "include/socket.hpp"
 
 namespace pkr {
 
-struct ServerConfig {
-    std::string working_dir = "./";
+class ServerConfig {
+public:
+    ServerConfig(const std::string&);
+
+public:
     uint32_t port = 31337;
+    std::string working_dir = "./";
 };
 
 class Server {
 public:
-    Server(const ServerConfig&, Logger&);
+    Server(const ServerConfig&);
     void start();
 
 private:
     void process_connection(const ClientSocket&);
 
 private:
-    Logger& log;
     ServerSocket server_socket;
     std::string working_dir;
 };
@@ -48,7 +50,5 @@ void parse_command(const char *recv_buffer, enum command_t *command,
 
 void interact_connection(int client_socket, const char *client_ip,
     const uint16_t client_port, const char *htdocs_dir);
-
-ServerConfig read_config(const std::string& file_name, Logger&);
 
 }  // namespace pkr

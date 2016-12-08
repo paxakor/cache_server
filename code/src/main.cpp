@@ -7,6 +7,7 @@
 using namespace pkr;
 
 int main(int argc, char** argv) {
+    log.init();
     ServerArgs args(argc, argv);
     Server srv(args.config_file());
     srv.start();

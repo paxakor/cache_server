@@ -38,6 +38,6 @@ private:
     std::vector<std::string> records;
 };
 
-#define log (Singleton<Logger>::get_inctance())
+extern Logger& log;
 
 }  // namespace pkr

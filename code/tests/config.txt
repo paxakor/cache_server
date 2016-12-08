@@ -1,2 +1,2 @@
-dir /home/paxakor/programs/projects/server/files
+dir /home/paxakor/programs/projects/server/repo/code/tests
 port 31337

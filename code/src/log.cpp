@@ -83,4 +83,6 @@ void Logger::write_to_file() {
     last_rec_pos = 0;
 }
 
+Logger& log = Singleton<Logger>::get_inctance();
+
 }  // namespace pkr

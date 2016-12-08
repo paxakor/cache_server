@@ -9,7 +9,7 @@
 namespace pkr {
 
 Socket::Socket(int h)
-    : handler(h) {}
+    : handler(h) { }
 
 Socket::~Socket() {
     close(handler);

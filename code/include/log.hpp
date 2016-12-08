@@ -27,9 +27,10 @@ public:
     void error(const std::string&);
     void access(const std::string&, uint32_t);
 
+    void write_to_file();
+
 private:
     void add_rec(const std::string&);
-    void write_to_file();
 
 private:
     std::string log_file = "log.txt";

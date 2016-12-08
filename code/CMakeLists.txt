@@ -9,6 +9,7 @@ set(SOURCES
     src/log.cpp
     src/main.cpp
     src/server.cpp
+    src/signal.cpp
     src/socket.cpp
     src/utils.cpp
     )
@@ -18,6 +19,7 @@ set(HEADERS
     include/filesystem.hpp
     include/log.hpp
     include/server.hpp
+    include/signal.hpp
     include/singleton.hpp
     include/socket.hpp
     include/utils.hpp

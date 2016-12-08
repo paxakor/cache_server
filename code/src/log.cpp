@@ -41,21 +41,25 @@ void Logger::init() {
     }
 }
 
+void Logger::access(const std::string& ip, uint32_t port) {
+    add_rec(std::string("New client: ") + ip + ":" + std::to_string(port));
+}
+
 void Logger::error(const std::string& msg) {
-    static const std::string error_prefix = "Error: ";
-    add_rec(error_prefix + msg);
+    static const std::string prefix = "Error: ";
+    add_rec(prefix + msg);
     std::cerr << "Error occured. See log file for details. Exit." << std::endl;
     write_to_file();
     std::exit(1);
 }
 
-void Logger::access(const std::string& ip, uint32_t port) {
-    add_rec(std::string("New client: ") + ip + ":" + std::to_string(port));
+void Logger::message(const std::string& msg) {
+    static const std::string prefix = "Message: ";
+    add_rec(prefix + msg);
 }
 
 void Logger::add_rec(const std::string& msg) {
-    const auto tm = std::time(nullptr);
-    std::string rec = std::string(std::ctime(&tm)) + "  " + msg;
+    std::string rec = std::to_string(std::time(nullptr)) + " " + msg;
     if (records.size() < max_size) {
         records.push_back(std::move(rec));
     } else {

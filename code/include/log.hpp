@@ -24,8 +24,9 @@ public:
     void set_file(const std::string&);
     void set_limit(uint64_t);
 
-    void error(const std::string&);
     void access(const std::string&, uint32_t);
+    void error(const std::string&);
+    void message(const std::string&);
 
     void write_to_file();
 

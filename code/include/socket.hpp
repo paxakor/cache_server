@@ -2,12 +2,15 @@
 
 #pragma once
 
-#include <cstdint>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include <sys/socket.h>
+#include <string>
 
 namespace pkr {
+
+using Port = uint16_t;
 
 class Socket {
 public:
@@ -18,6 +21,10 @@ public:
     void set_handler(int);
     sockaddr_in get_address() const;
     sockaddr_in& mutable_address();
+    std::string read(size_t);
+    ssize_t read(char*, size_t);
+    ssize_t write(const std::string&);
+    ssize_t write(const void*, size_t);
 
 protected:
     int handler;
@@ -29,7 +36,7 @@ class ClientSocket : public Socket {
 
 class ServerSocket : public Socket {
 public:
-    ServerSocket(uint16_t);
+    ServerSocket(Port);
     void accept(ClientSocket&);
 };
 

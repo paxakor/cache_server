@@ -6,6 +6,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 set(SOURCES
     src/args_parser.cpp
+    src/client.cpp
     src/log.cpp
     src/main.cpp
     src/server.cpp
@@ -16,6 +17,7 @@ set(SOURCES
 
 set(HEADERS
     include/args_parser.hpp
+    include/client.hpp
     include/filesystem.hpp
     include/log.hpp
     include/server.hpp

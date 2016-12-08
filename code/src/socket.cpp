@@ -2,8 +2,10 @@
 
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <string>
 #include "include/socket.hpp"
 
 namespace pkr {
@@ -31,8 +33,27 @@ sockaddr_in& Socket::mutable_address()  {
     return address;
 }
 
+std::string Socket::read(size_t nbyte) {
+    std::string buf(nbyte, 0);
+    ::read(get_handler(), const_cast<char*>(buf.data()), nbyte);
+    buf.resize(strlen(buf.data()));
+    return buf;
+}
 
-ServerSocket::ServerSocket(uint16_t port)
+ssize_t Socket::read(char* buf, size_t nbyte) {
+    return ::read(get_handler(), buf, nbyte);
+}
+
+ssize_t Socket::write(const std::string& buf) {
+    return write(buf.data(), buf.size());
+}
+
+ssize_t Socket::write(const void* buf, size_t nbyte) {
+    return ::write(get_handler(), buf, nbyte);
+}
+
+
+ServerSocket::ServerSocket(Port port)
     : Socket(socket(AF_INET, SOCK_STREAM, 0)) {
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_family = AF_INET;

@@ -1,6 +1,7 @@
 // Copyright 2016, Pavel Korozevtsev.
 
 #include <arpa/inet.h>
+#include <ext/stdio_filebuf.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -13,6 +14,7 @@
 #include <iostream>
 #include <string>
 
+#include "include/client.hpp"
 #include "include/filesystem.hpp"
 #include "include/log.hpp"
 #include "include/server.hpp"
@@ -21,84 +23,63 @@
 
 namespace pkr {
 
-void write_headers_or_error(int client_socket, int status,
-    size_t content_length, const char *data)
-{
-    char headers[2048];
-    if (status == 200) {
-        snprintf(headers, sizeof(headers),
-            "HTTP/1.0 200 OK\r\n"
-            "Server: Wonderful HTTP Server By Paxakor\r\n"
-            "Content-Type: %s\r\n"
-            "Content-Length: %lu\r\n"
-            "\r\n",
-            data, content_length);
-    } else {
-        snprintf(headers, sizeof(headers),
-            "HTTP/1.0 %d %s\r\n"
-            "Server: Wonderful HTTP Server By Paxakor\r\n"
-            "Content-Type: text/plain\r\n"
-            "Content-Length: %lu\r\n"
-            "\r\n"
-            "%s",
-            status, data, strlen(data), data);
+void Server::do_get(Client& client, const std::string& url) {
+    std::string file_name = working_dir;
+    if (*file_name.rbegin() != '/') {
+        file_name += "/";
     }
-    write(client_socket, headers, strlen(headers));
-}
+    if (url == "/"  || url == "") {
+        file_name += "index.html";
+    } else {
+        file_name += url;
+    }
+    log.message("open " + file_name);
+    std::ifstream file(file_name);
+    if (!file) {
+        client.write_response(404, "Not Found");
+    } else {
+        client.write_response(200, "mega mime type", fs::file_size(file_name));
+        char buffer[65536];
+        do {
+            file.read(buffer, sizeof(buffer));
+            client.mutable_socket().write(buffer, file.gcount());
+        } while (file.good());
 
-void do_get(int client_socket, const char *url, const char *client_ip,
-    const uint16_t client_port, const char *htdocs_dir)
-{
-    char file_name[2048] = {0};
-    memcpy(file_name, htdocs_dir, strlen(htdocs_dir));
-    if (strcmp("/", url) == 0 || strlen(url) == 0) {
-        strcat(file_name, "/index.html");
-    } else {
-        strcat(file_name, url);
-    }
-    printf("open %s\n", file_name);
-    int f_id = open(file_name, O_RDONLY);
-    if (f_id == -1) {
-        write_headers_or_error(client_socket, 404, 0, "Not Found");
-    } else {
-        // write_headers_or_error(client_socket, 200, get_file_size(file_name),
-        //     get_mime_type(file_name));
-        write_headers_or_error(client_socket, 200, 84, "mega mime type");
-        char file_buffer[65536];
-        while (1) {
-            ssize_t byttes_read = read(f_id, file_buffer, sizeof(file_buffer));
-            if (byttes_read > 0) {
-                ssize_t bytes_writen = write(client_socket, file_buffer,
-                    byttes_read);
-            } else {
-                break;
-            }
-        }
-        close(f_id);
+        // the following code makes the same: it copies file into socket
+        // (possible, it will be useful in the future)
+        // const int hndl = client.get_socket().get_handler();
+        // __gnu_cxx::stdio_filebuf<char> filebuf(hndl, std::ios::out);
+        // std::ostream socket_stream(&filebuf);
+        // socket_stream << file.rdbuf();
     }
 }
 
-void parse_command(const char *recv_buffer, enum command_t *command,
-    const char *command_arg, const size_t cmd_arg_len)
-{
-    printf("recv_buffer: %s\n", recv_buffer);
-    *command = CMD_GET;
+Server::Command Server::parse_command(const std::string& buffer,
+    const char *cmd_arg, const size_t cmd_arg_len) {
+    printf("buffer: %s\n", buffer.c_str());
+    return Command::get;
 }
 
-void interact_connection(int client_socket, const char *client_ip,
-    const uint16_t client_port, const char *htdocs_dir)
-{
-    char recv_buffer[16536];
-    memset(recv_buffer, 0, sizeof(recv_buffer));
-    ssize_t byttes_received;
-    char command_arg[2000];
-    enum command_t command = CMD_UNKNOWN;
-    byttes_received = read(client_socket, recv_buffer, sizeof(recv_buffer));
-    parse_command(recv_buffer, &command, command_arg, sizeof(command_arg));
-    if (command == CMD_GET) {
-        do_get(client_socket, command_arg, client_ip, client_port, htdocs_dir);
-    } else if (command == CMD_POST) {
-        // do_post(client_socket, command_arg, client_ip, client_port, htdocs_dir);
+void Server::interact_connection(Client& client) {
+    char cmd_arg[2000] = {0};
+    char header[16 * 1024] = {0};  // max header size = 16KiB
+    const auto bytes = client.mutable_socket().read(header, sizeof(header));
+    if (bytes >= static_cast<decltype(bytes)>(sizeof(header))) {
+        log.message("Entity Too Large");
+        client.write_response(413, "Entity Too Large");
+        return;
+    }
+    const auto command = parse_command(header, cmd_arg, sizeof(cmd_arg));
+    switch (command) {
+        case Command::get:
+            do_get(client, cmd_arg);
+            break;
+        case Command::post:
+            // do_post(client, cmd_arg);
+            break;
+        default:
+            log.message("invalig command");
+            break;
     }
 }
 
@@ -139,22 +120,11 @@ Server::Server(const ServerConfig& cfg)
     , working_dir(cfg.working_dir) { }
 
 void Server::start() {
-    while (1) {
-        ClientSocket client;
-        server_socket.accept(client);
-        process_connection(client);
+    while (true) {
+        Client client(server_socket);
+        log.access(client.get_ip(), client.get_port());
+        interact_connection(client);
     }
-}
-
-void Server::process_connection(const ClientSocket& client) {
-    char client_ip[INET_ADDRSTRLEN];
-    const struct in_addr client_ip_addr = client.get_address().sin_addr;
-    inet_ntop(AF_INET, &client_ip_addr, client_ip, sizeof(client_ip));
-    const uint16_t client_port = ntohs(client.get_address().sin_port);
-    log.access(client_ip, client_port);
-    interact_connection(client.get_handler(), client_ip, client_port,
-        working_dir.c_str());
-    close(client.get_handler());
 }
 
 }  // namespace pkr

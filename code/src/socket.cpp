@@ -3,10 +3,14 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stddef.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string>
+#include "include/buffer.hpp"
 #include "include/socket.hpp"
+#include "include/string_view.hpp"
+#include "include/utils.hpp"
 
 namespace pkr {
 
@@ -35,13 +39,39 @@ sockaddr_in& Socket::mutable_address()  {
 
 std::string Socket::read(size_t nbyte) {
     std::string buf(nbyte, 0);
-    ::read(get_handler(), const_cast<char*>(buf.data()), nbyte);
+    read(const_cast<char*>(buf.data()), nbyte);
     buf.resize(strlen(buf.data()));
     return buf;
 }
 
-ssize_t Socket::read(char* buf, size_t nbyte) {
-    return ::read(get_handler(), buf, nbyte);
+ssize_t Socket::read(char* dest, size_t nbyte) {
+    const auto bf_sz = buffer_in.size();
+    if (nbyte > bf_sz) {
+        buffer_in.read_all(dest);
+        nbyte -= bf_sz;
+        dest += bf_sz;
+        return read_unbuf(dest, nbyte);
+    } else {
+        buffer_in.read(dest, nbyte);
+        return nbyte;
+    }
+}
+
+ssize_t Socket::read_unbuf(char* dest, size_t nbyte) {
+    return ::read(get_handler(), dest, nbyte);
+}
+
+std::string Socket::read_until(string_view delim) {
+    std::string buf;
+    while (fill_buffer() > 0) {
+        const auto entry = search(buffer_in.begin(), buffer_in.end(), delim);
+        buf.append(buffer_in.begin(), entry);
+        if (entry != buffer_in.end()) {
+            break;
+        }
+        buffer_in.drop();
+    }
+    return buf;
 }
 
 ssize_t Socket::write(const std::string& buf) {
@@ -52,6 +82,14 @@ ssize_t Socket::write(const void* buf, size_t nbyte) {
     return ::write(get_handler(), buf, nbyte);
 }
 
+ssize_t Socket::fill_buffer() {
+    const auto len = buffer_in.size();
+    const auto nb = read_unbuf(buffer_in.buf + len, buffer_in.capacity() - len);
+    if (nb > 0) {
+        buffer_in.len += nb;
+    }
+    return nb;
+}
 
 ServerSocket::ServerSocket(Port port)
     : Socket(socket(AF_INET, SOCK_STREAM, 0)) {

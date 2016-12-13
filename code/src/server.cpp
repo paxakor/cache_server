@@ -17,6 +17,7 @@
 #include "include/client.hpp"
 #include "include/filesystem.hpp"
 #include "include/log.hpp"
+#include "include/parser.hpp"
 #include "include/server.hpp"
 #include "include/socket.hpp"
 #include "include/utils.hpp"
@@ -28,7 +29,7 @@ void Server::do_get(Client& client, const std::string& url) {
     if (*file_name.rbegin() != '/') {
         file_name += "/";
     }
-    if (url == "/"  || url == "") {
+    if (url == "/" || url == "") {
         file_name += "index.html";
     } else {
         file_name += url;
@@ -54,30 +55,18 @@ void Server::do_get(Client& client, const std::string& url) {
     }
 }
 
-Server::Command Server::parse_command(const std::string& buffer,
-    const char *cmd_arg, const size_t cmd_arg_len) {
-    printf("buffer: %s\n", buffer.c_str());
-    return Command::get;
-}
-
 void Server::interact_connection(Client& client) {
-    char cmd_arg[2000] = {0};
-    char header[16 * 1024] = {0};  // max header size = 16KiB
-    const auto bytes = client.mutable_socket().read(header, sizeof(header));
-    if (bytes >= static_cast<decltype(bytes)>(sizeof(header))) {
-        log.message("Entity Too Large");
-        client.write_response(413, "Entity Too Large");
-        return;
-    }
-    const auto command = parse_command(header, cmd_arg, sizeof(cmd_arg));
-    switch (command) {
-        case Command::get:
-            do_get(client, cmd_arg);
+    const auto header = client.mutable_socket().read_until("\r\n\r\n");
+    const auto msg = parse_header(header);
+    switch (msg.method) {
+        case Method::GET:
+            do_get(client, msg.URI);
             break;
-        case Command::post:
+        case Method::POST:
             // do_post(client, cmd_arg);
             break;
         default:
+            client.write_response(400, "Bad Request");
             log.message("invalig command");
             break;
     }

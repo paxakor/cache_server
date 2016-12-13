@@ -9,21 +9,26 @@ set(SOURCES
     src/client.cpp
     src/log.cpp
     src/main.cpp
+    src/parser.cpp
     src/server.cpp
     src/signal.cpp
     src/socket.cpp
+    src/string_view.cpp
     src/utils.cpp
     )
 
 set(HEADERS
     include/args_parser.hpp
+    include/buffer.hpp
     include/client.hpp
     include/filesystem.hpp
     include/log.hpp
+    include/parser.hpp
     include/server.hpp
     include/signal.hpp
     include/singleton.hpp
     include/socket.hpp
+    include/string_view.hpp
     include/utils.hpp
     )
 

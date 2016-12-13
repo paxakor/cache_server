@@ -26,14 +26,8 @@ public:
     void start();
 
 private:
-    enum class Command : uint8_t {
-        unknown, get, post
-    };
-
     void do_get(Client&, const std::string&);
     void interact_connection(Client&);
-
-    static Command parse_command(const std::string&, const char*, const size_t);
 
 private:
     ServerSocket server_socket;

@@ -26,7 +26,7 @@ Port Client::get_port() const {
 }
 
 std::string Client::get_ip() const {
-    return {ip.begin(), ip.begin() + strlen(&ip[0])};
+    return {ip.begin(), ip.begin() + strlen(ip.data())};
 }
 
 ssize_t Client::write_response(int status, const std::string& msg,

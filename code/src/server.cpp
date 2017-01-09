@@ -106,14 +106,19 @@ ServerConfig::ServerConfig(const std::string& file_name) {
 
 Server::Server(const ServerConfig& cfg)
     : server_socket(cfg.port)
-    , working_dir(cfg.working_dir) { }
+    , working_dir(cfg.working_dir)
+    , enabled(true) { }
 
 void Server::start() {
-    while (true) {
+    while (enabled) {
         Client client(server_socket);
         log.access(client.get_ip(), client.get_port());
         interact_connection(client);
     }
+}
+
+void Server::finish() {
+    enabled = false;
 }
 
 }  // namespace pkr

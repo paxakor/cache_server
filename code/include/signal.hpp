@@ -3,23 +3,20 @@
 #pragma once
 
 #include <signal.h>
-#include "include/singleton.hpp"
+#include "include/server.hpp"
 
 namespace pkr {
 
 class SignalHandler {
-protected:
-    friend class Singleton<SignalHandler>;
-    SignalHandler();
-
 public:
-    SignalHandler(const SignalHandler&) = delete;
-    SignalHandler& operator=(const SignalHandler&) = delete;
+    SignalHandler();
+    void set_server(Server&);
 
 private:
     static void finish(int);
-};
 
-extern SignalHandler& handler;
+private:
+    static Server* srv;
+};
 
 }  // namespace pkr

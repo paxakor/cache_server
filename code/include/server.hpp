@@ -24,6 +24,7 @@ class Server {
 public:
     Server(const ServerConfig&);
     void start();
+    void finish();
 
 private:
     void do_get(Client&, const std::string&);
@@ -32,6 +33,7 @@ private:
 private:
     ServerSocket server_socket;
     std::string working_dir;
+    bool enabled;
 };
 
 }  // namespace pkr

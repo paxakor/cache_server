@@ -83,7 +83,7 @@ ServerConfig::ServerConfig(const std::string& file_name) {
             if (parts[0] == "dir") {
                 working_dir = parts[1];
                 fs::path p(working_dir);
-                if (!fs::exists(p) || !fs::is_directory(p)) {
+                if (!fs::is_directory(p)) {
                     err_msg = "no such directory";
                 }
             } else if (parts[0] == "port") {

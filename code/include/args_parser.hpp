@@ -1,5 +1,4 @@
 // Copyright 2016, Pavel Korozevtsev.
-// Copyright 2016, Pavel Korozevtsev.
 
 #pragma once
 

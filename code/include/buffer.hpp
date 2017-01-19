@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <stddef.h>
-#include <string.h>
+#include <cstddef>
+#include <cstring>
 
 namespace pkr {
 

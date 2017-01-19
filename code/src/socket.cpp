@@ -1,9 +1,9 @@
 // Copyright 2016, Pavel Korozevtsev.
 
+#include <cstddef>
+#include <cstring>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <string.h>
-#include <stddef.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string>

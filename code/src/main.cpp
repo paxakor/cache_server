@@ -14,5 +14,6 @@ int main(int argc, char** argv) {
     Server srv(args.config_file());
     shndl.set_server(srv);
     srv.start();
+    log.write_to_file();
     return 0;
 }

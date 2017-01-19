@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include <cstddef>
 #include <arpa/inet.h>
-#include <stddef.h>
 #include <string>
 #include "include/buffer.hpp"
 #include "include/string_view.hpp"

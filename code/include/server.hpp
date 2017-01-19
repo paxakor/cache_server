@@ -2,10 +2,7 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <unistd.h>
 #include <string>
-#include <vector>
 #include "include/client.hpp"
 #include "include/socket.hpp"
 

@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <signal.h>
 #include "include/server.hpp"
 
 namespace pkr {

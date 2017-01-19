@@ -1,6 +1,6 @@
 // Copyright 2016, Pavel Korozevtsev.
 
-#include <string.h>
+#include <cstring>
 #include <algorithm>
 #include <string>
 #include <utility>

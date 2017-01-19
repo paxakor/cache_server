@@ -1,12 +1,13 @@
 // Copyright 2016, Pavel Korozevtsev.
 
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
 #include <arpa/inet.h>
 #include <ext/stdio_filebuf.h>
 #include <fcntl.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 

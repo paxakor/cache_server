@@ -1,6 +1,7 @@
 // Copyright 2016, Pavel Korozevtsev.
 
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include "include/client.hpp"
 #include "include/socket.hpp"
 

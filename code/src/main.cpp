@@ -9,7 +9,6 @@ using namespace pkr;
 
 int main(int argc, char** argv) {
     SignalHandler shndl;
-    log.init();
     ServerArgs args(argc, argv);
     Server srv(args.config_file());
     shndl.set_server(srv);

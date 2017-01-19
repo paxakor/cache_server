@@ -13,16 +13,11 @@ Message parse_header(string_view text) {
     Message msg;
     msg.method = Method::UNKNOWN;
     const auto lines = split(text, "\r\n", 2);
-    if (lines.size() < 2) {
-        log.message("invalid header");
-        return msg;
-    }
     const auto& request = lines[0];
     const auto args = split(request);
     if (args.size() < 3) {
         if (request.size() <= 80) {
-            log.message(std::string("invalid request line: \n") +
-                request + "\n");
+            log.message("invalid request line: \n" + request + "\n");
         } else {
             log.message("invalid request line (too long to show)");
         }

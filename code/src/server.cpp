@@ -68,7 +68,7 @@ void Server::interact_connection(Client& client) {
             break;
         default:
             client.write_response(400, "Bad Request");
-            log.message("invalig command");
+            log.message("invalid command");
             break;
     }
 }
@@ -99,8 +99,8 @@ ServerConfig::ServerConfig(const std::string& file_name) {
             err_msg = "too few arguments";
         }
         if (!err_msg.empty()) {
-            log.error("Invalid config line " + std::to_string(line_number) +
-                ": " + err_msg + ".");
+            log.fatal_error("Invalid config line " +
+                std::to_string(line_number) + ": " + err_msg + ".");
         }
     }
 }
@@ -111,6 +111,7 @@ Server::Server(const ServerConfig& cfg)
     , enabled(true) { }
 
 void Server::start() {
+    log.message("Server started");
     while (enabled) {
         Client client(server_socket);
         log.access(client.get_ip(), client.get_port());

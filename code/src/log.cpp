@@ -12,33 +12,12 @@
 
 namespace pkr {
 
-Logger::Logger() { }
-
 Logger::~Logger() {
     write_to_file();
 }
 
 void Logger::set_file(const std::string& file_name) {
     log_file = file_name;
-}
-
-void Logger::set_limit(uint64_t n) {
-    max_size = n;
-}
-
-void Logger::init() {
-    records.reserve(max_size);
-    if (fs::exists(log_file)) {
-        std::string line;
-        std::ifstream old_log(log_file);
-        while (std::getline(old_log, line) && records.size() < max_size) {
-            records.push_back(std::move(line));
-            ++last_rec_pos;
-        }
-    }
-    if (last_rec_pos == max_size) {
-        last_rec_pos = 0;
-    }
 }
 
 void Logger::access(const std::string& ip, uint32_t port) {
@@ -48,8 +27,12 @@ void Logger::access(const std::string& ip, uint32_t port) {
 void Logger::error(const std::string& msg) {
     static const std::string prefix = "Error: ";
     add_rec(prefix + msg);
-    std::cerr << "Error occured. See log file for details. Exit." << std::endl;
     write_to_file();
+}
+
+void Logger::fatal_error(const std::string& msg) {
+    std::cerr << "Error occured. See log file for details. Exit." << std::endl;
+    error(msg);
     std::exit(1);
 }
 
@@ -60,31 +43,16 @@ void Logger::message(const std::string& msg) {
 
 void Logger::add_rec(const std::string& msg) {
     std::string rec = std::to_string(std::time(nullptr)) + " " + msg;
-    if (records.size() < max_size) {
-        records.push_back(std::move(rec));
-    } else {
-        records[last_rec_pos] = std::move(rec);
-    }
-    // last_rec_pos = (last_rec_pos + 1) % max_size;
-    ++last_rec_pos;
-    if (last_rec_pos == max_size) {
-        last_rec_pos = 0;
-    }
+    records.push(std::move(rec));
 }
 
 void Logger::write_to_file() {
     std::cout << "Saving log to file" << std::endl;
-    std::ofstream logf(log_file);
-    uint64_t rec_pos = records.size() < max_size ? 0 : last_rec_pos;
-    if (records.size() == max_size) {
-        last_rec_pos = (last_rec_pos + max_size - 1) % max_size;
+    std::ofstream logf(log_file, std::ios::app);
+    while (!records.empty()) {
+        logf << records.front() << '\n';
+        records.pop();
     }
-    while (rec_pos != last_rec_pos) {
-        logf << records[rec_pos] << '\n';
-        ++rec_pos;
-    }
-    records.clear();
-    last_rec_pos = 0;
 }
 
 Logger& log = Singleton<Logger>::get_inctance();

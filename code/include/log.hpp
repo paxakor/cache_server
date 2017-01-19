@@ -4,7 +4,7 @@
 
 #include <cstdint>
 #include <string>
-#include <vector>
+#include <queue>
 #include "include/singleton.hpp"
 
 namespace pkr {
@@ -12,7 +12,7 @@ namespace pkr {
 class Logger {
 protected:
     friend class Singleton<Logger>;
-    Logger();
+    Logger() = default;
 
 public:
     Logger(const Logger&) = delete;
@@ -20,12 +20,11 @@ public:
 
     ~Logger();
 
-    void init();
     void set_file(const std::string&);
-    void set_limit(uint64_t);
 
     void access(const std::string&, uint32_t);
     void error(const std::string&);
+    void fatal_error(const std::string&);
     void message(const std::string&);
 
     void write_to_file();
@@ -35,9 +34,7 @@ private:
 
 private:
     std::string log_file = "log.txt";
-    uint64_t max_size = 1024;
-    uint64_t last_rec_pos = 0;
-    std::vector<std::string> records;
+    std::queue<std::string> records;
 };
 
 extern Logger& log;

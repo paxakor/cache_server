@@ -1,4 +1,4 @@
-// Copyright 2016, Pavel Korozevtsev.
+// Copyright 2016-2017, Pavel Korozevtsev.
 
 #include <cstddef>
 #include <cstring>

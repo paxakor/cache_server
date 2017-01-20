@@ -44,4 +44,27 @@ Message parse_header(string_view header) {
     return msg;
 }
 
+std::string debug_header(const Message& msg) {
+    std::string header;
+    header.reserve(2048);
+    if (msg.method == Method::GET) {
+        header += "GET ";
+    } else if (msg.method == Method::HEAD) {
+        header += "HEAD ";
+    } else if (msg.method == Method::POST) {
+        header += "POST ";
+    } else {
+        header += "UNKNOWN ";
+    }
+    header += msg.URI;
+    header += " HTTP/xxx\r\n";
+    for (const auto& param : msg.head) {
+        header += param.first;
+        header += ": ";
+        header += param.second;
+        header += "\r\n";
+    }
+    return header;
+}
+
 }  // namespace pkr

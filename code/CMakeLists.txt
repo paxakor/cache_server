@@ -49,7 +49,7 @@ if(GIT_BRANCH STREQUAL "master")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Werror")
 else()
     message(STATUS "Developer version")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb -pg")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb -pg -DDEBUG")
 endif()
 
 

@@ -44,18 +44,23 @@ void Server::finish() {
 }
 
 void Server::do_get(Client& client, const std::string& url) {
+    log.message(url + " requested");
     std::string file_name = working_dir;
     file_name += (url == "/" || url == "") ? "index.html" : url;
-    log.message("open " + file_name);
     std::ifstream file(file_name);
     if (!file) {
-        client.write_response(404, "Not Found");
+        log.message(file_name + " not found. 404");
+        client.write_failure(404, "Not Found");
     } else {
-        client.write_response(200, "mega mime type", fs::file_size(file_name));
+        log.message(file_name + " opened");
+        client.write_response(200, fs::file_size(file_name));
         char buffer[65536];
         do {
             file.read(buffer, sizeof(buffer));
-            client.mutable_socket().write(buffer, file.gcount());
+            const auto len = file.gcount();
+            if (client.mutable_socket().write(buffer, len) != len) {
+                log.message("socket.write error");
+            }
         } while (file.good());
 
         // the following code makes the same: it copies file into socket
@@ -70,6 +75,9 @@ void Server::do_get(Client& client, const std::string& url) {
 void Server::interact_connection(Client& client) {
     const auto header = client.mutable_socket().read_until("\r\n\r\n");
     const auto msg = parse_header(header);
+#ifdef DEBUG
+    std::cout << debug_header(msg) << std::endl;
+#endif
     switch (msg.method) {
         case Method::GET:
             do_get(client, msg.URI);
@@ -78,7 +86,7 @@ void Server::interact_connection(Client& client) {
             // do_post(client, cmd_arg);
             break;
         default:
-            client.write_response(400, "Bad Request");
+            client.write_failure(400, "Bad Request");
             log.message("invalid command");
             break;
     }

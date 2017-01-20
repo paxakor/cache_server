@@ -30,21 +30,19 @@ std::string Client::get_ip() const {
     return {ip.begin(), ip.begin() + strlen(ip.data())};
 }
 
-ssize_t Client::write_response(int status, const std::string& msg,
-    size_t file_size) {
+ssize_t Client::write_failure(int status, const std::string& msg) {
     char headers[2048];
-    if (status == 200) {
-        snprintf(headers, sizeof(headers),
-            "HTTP/1.0 200 OK\r\n"
-            "Server: Wonderful HTTP Server By Paxakor\r\n"
-            "Content-Type: %s\r\n"
-            "Content-Length: %lu\r\n"
-            "\r\n",
-            msg.c_str(), file_size);
-    } else {
-        snprintf(headers, sizeof(headers),
-            "HTTP/1.0 %d %s\r\n", status, msg.c_str());
-    }
+    snprintf(headers, sizeof(headers), "HTTP/1.0 %d %s\r\n", status,
+        msg.c_str());
+    return mutable_socket().write(headers, strlen(headers));
+}
+
+ssize_t Client::write_response(int status, size_t file_size) {
+    char headers[2048];
+    snprintf(headers, sizeof(headers),
+        "HTTP/1.0 %d OK\r\n"
+        "Content-Length: %lu\r\n"
+        "\r\n", status, file_size);
     return mutable_socket().write(headers, strlen(headers));
 }
 

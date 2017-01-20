@@ -15,7 +15,8 @@ public:
     const ClientSocket& get_socket() const;
     Port get_port() const;
     std::string get_ip() const;
-    ssize_t write_response(int, const std::string&, size_t = 0);
+    ssize_t write_failure(int, const std::string&);
+    ssize_t write_response(int, size_t);
 
 private:
     ClientSocket socket;

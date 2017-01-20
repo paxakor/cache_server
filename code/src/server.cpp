@@ -73,7 +73,7 @@ void Server::do_get(Client& client, const std::string& url) {
 }
 
 void Server::interact_connection(Client& client) {
-    const auto header = client.mutable_socket().read_until("\r\n\r\n");
+    const auto header = client.mutable_socket().read_header();
     const auto msg = parse_header(header);
 #ifdef DEBUG
     std::cout << debug_header(msg) << std::endl;

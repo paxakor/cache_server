@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <algorithm>
 #include <string>
 #include "include/buffer.hpp"
 #include "include/socket.hpp"
@@ -61,17 +62,34 @@ ssize_t Socket::read_unbuf(char* dest, size_t nbyte) {
     return ::read(get_handler(), dest, nbyte);
 }
 
-std::string Socket::read_until(string_view delim) {
-    std::string buf;
-    while (fill_buffer() > 0) {
-        const auto entry = search(buffer_in.begin(), buffer_in.end(), delim);
-        buf.append(buffer_in.begin(), entry);
-        if (entry != buffer_in.end()) {
+std::string Socket::read_header() {
+    std::string header;
+    // There is a finite-state automaton emulation.
+    // States:
+    //   0 -- nothing special
+    //   1 -- "\r" found
+    //   2 -- "\r\n" found
+    //   3 -- "\r\n\r" found
+    //   4 -- "\r\n\r\n" found
+    int state = 0;
+    char need = '\r';
+    while (buffer_in.size() > 0 || fill_buffer() > 0) {
+        auto it = std::find(buffer_in.begin(), buffer_in.end(), need);
+        while (it != buffer_in.end() && *it == need && state != 4) {
+            ++state;
+            ++it;
+            need = (need == '\n') ? '\r' : '\n';
+        }
+        header.append(buffer_in.begin(), it);
+        buffer_in.remove_prefix(it - buffer_in.begin());
+        if (state == 4) {
             break;
         }
-        buffer_in.drop();
+        if (*it != need) {
+            state = 0;
+        }
     }
-    return buf;
+    return header;
 }
 
 ssize_t Socket::write(const std::string& buf) {

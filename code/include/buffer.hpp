@@ -28,6 +28,7 @@ public:
     ssize_t read_all(char*);
     ssize_t write(const char*, size_t);
     void drop();
+    void remove_prefix(size_t);
 
 protected:
     char buf[N];
@@ -80,10 +81,7 @@ ssize_t Buffer<N>::read(char* dest, size_t n) {
         return -1;
     }
     memcpy(dest, buf, n);
-    len -= n;
-    for (size_t i = 0; i < len; ++i) {
-        buf[i] = buf[i + n];
-    }
+    remove_prefix(n);
     return n;
 }
 
@@ -104,6 +102,14 @@ ssize_t Buffer<N>::write(const char* src, size_t n) {
 template <size_t N>
 void Buffer<N>::drop() {
     len = 0;
+}
+
+template <size_t N>
+void Buffer<N>::remove_prefix(size_t n) {
+    len -= n;
+    for (size_t i = 0; i < len; ++i) {
+        buf[i] = buf[i + n];
+    }
 }
 
 }  // namespace pkr

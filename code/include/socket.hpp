@@ -24,7 +24,7 @@ public:
     std::string read(size_t);
     ssize_t read(char*, size_t);
     ssize_t read_unbuf(char*, size_t);
-    std::string read_until(string_view);
+    std::string read_header();
     ssize_t write(const std::string&);
     ssize_t write(const void*, size_t);
 

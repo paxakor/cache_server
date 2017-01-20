@@ -20,7 +20,7 @@ enum class Method {
 };
 
 struct Message {
-    Method method;
+    Method method = Method::UNKNOWN;
     std::string URI;
     Header head;
     std::string body;

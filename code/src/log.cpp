@@ -44,6 +44,9 @@ void Logger::message(const std::string& msg) {
 void Logger::add_rec(const std::string& msg) {
     std::string rec = std::to_string(std::time(nullptr)) + " " + msg;
     records.push(std::move(rec));
+    if (records.size() > 0x4000) {
+        write_to_file();
+    }
 }
 
 void Logger::write_to_file() {

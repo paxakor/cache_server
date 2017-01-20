@@ -8,8 +8,11 @@
 
 namespace pkr {
 
-std::vector<std::string> split(string_view, string_view, size_t);
-std::vector<std::string> split(string_view, size_t = 0, char = 0);
+std::string strip(string_view);
+std::vector<std::string> split(string_view, char = 0);
+std::vector<std::string> split(string_view, string_view);
+std::vector<std::string> split_n(string_view, size_t, char = 0);
+std::vector<std::string> split_n(string_view, size_t, string_view);
 const char* search(const char*, const char*, string_view);
 
 }  // namespace pkr

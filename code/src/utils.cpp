@@ -9,6 +9,16 @@
 
 namespace pkr {
 
+std::string strip(string_view text) {
+    while (std::isspace(text.front())) {
+        text.remove_prefix(1);
+    }
+    while (std::isspace(text.back())) {
+        text.remove_suffix(1);
+    }
+    return text.to_string();
+}
+
 std::vector<size_t> find_all(string_view str, string_view pattern) {
     std::vector<size_t> ret;
     size_t pos = 0;
@@ -21,34 +31,7 @@ std::vector<size_t> find_all(string_view str, string_view pattern) {
     return ret;
 }
 
-std::vector<std::string> split(string_view str, string_view delim,
-    size_t max_count) {
-    const auto matches = find_all(str, delim);
-    size_t i = 0;
-    size_t pos = 0;
-    std::vector<std::string> ret;
-
-    auto advance_pos = [&]() {
-        for (; i < matches.size() && pos == matches[i]; ++i) {
-            pos += delim.size();
-        }
-    };
-
-    advance_pos();
-    for (; i < matches.size() && ret.size() + 1 < max_count; ++i) {
-        if (i < matches.size()) {
-            ret.push_back(str.substr(pos, matches[i] - pos));
-            pos = matches[i] + delim.size();
-        }
-        advance_pos();
-    }
-    if (pos < str.size()) {
-        ret.push_back(str.substr(pos, str.size() - pos));
-    }
-    return ret;
-}
-
-std::vector<std::string> split(string_view str, size_t max_count, char delim) {
+std::vector<std::string> split(string_view str, char delim) {
     auto is_delim = [delim](const char ch) -> bool {
         if (delim) {
             return ch == delim;
@@ -59,7 +42,7 @@ std::vector<std::string> split(string_view str, size_t max_count, char delim) {
 
     size_t pos = 0;
     std::vector<std::string> res;
-    while (pos < str.size() && (max_count == 0 || res.size() + 1 < max_count)) {
+    while (pos < str.size()) {
         while (pos < str.size() && is_delim(str[pos])) {
             ++pos;
         }
@@ -76,6 +59,88 @@ std::vector<std::string> split(string_view str, size_t max_count, char delim) {
         res.push_back(str.substr(pos, str.size() - pos));
     }
     return res;
+}
+
+std::vector<std::string> split(string_view str, string_view delim) {
+    const auto matches = find_all(str, delim);
+    size_t i = 0;
+    size_t pos = 0;
+    std::vector<std::string> ret;
+
+    auto advance_pos = [&]() {
+        for (; i < matches.size() && pos == matches[i]; ++i) {
+            pos += delim.size();
+        }
+    };
+
+    advance_pos();
+    for (; i < matches.size(); ++i) {
+        if (i < matches.size()) {
+            ret.push_back(str.substr(pos, matches[i] - pos));
+            pos = matches[i] + delim.size();
+        }
+        advance_pos();
+    }
+    if (pos < str.size()) {
+        ret.push_back(str.substr(pos, str.size() - pos));
+    }
+    return ret;
+}
+
+std::vector<std::string> split_n(string_view str, size_t max_cnt, char delim) {
+    auto is_delim = [delim](const char ch) -> bool {
+        if (delim) {
+            return ch == delim;
+        } else {
+            return std::isspace(ch);
+        }
+    };
+
+    size_t pos = 0;
+    std::vector<std::string> res;
+    while (pos < str.size() && res.size() + 1 < max_cnt) {
+        while (pos < str.size() && is_delim(str[pos])) {
+            ++pos;
+        }
+        size_t len = 0;
+        while ((pos + len) < str.size() && !is_delim(str[pos + len])) {
+            ++len;
+        }
+        if (len > 0) {
+            res.push_back(str.substr(pos, len));
+        }
+        pos += len + 1;
+    }
+    if (pos < str.size()) {
+        res.push_back(str.substr(pos, str.size() - pos));
+    }
+    return res;
+}
+
+std::vector<std::string> split_n(string_view str, size_t max_cnt, string_view delim) {
+    const auto matches = find_all(str, delim);
+    size_t i = 0;
+    size_t pos = 0;
+    std::vector<std::string> ret;
+
+    auto advance_pos = [&]() {
+        for (; i < matches.size() && pos == matches[i]; ++i) {
+            pos += delim.size();
+        }
+    };
+
+    advance_pos();
+    for (; i < matches.size() && ret.size() + 1 < max_cnt; ++i) {
+        if (i < matches.size()) {
+            ret.push_back(str.substr(pos, matches[i] - pos));
+            pos = matches[i] + delim.size();
+        }
+        advance_pos();
+    }
+    if (pos < str.size()) {
+        ret.push_back(str.substr(pos, str.size() - pos));
+    }
+    return ret;
 }
 
 const char* search(const char* begin, const char* end, string_view str) {

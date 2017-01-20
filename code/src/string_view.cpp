@@ -160,4 +160,12 @@ bool operator>=(string_view lhs, string_view rhs) {
     return !(lhs < rhs);
 }
 
+std::string operator+(string_view sv, const std::string& s) {
+    return sv.to_string() + s;
+}
+
+std::string operator+(const std::string& s, string_view sv) {
+    return s + sv.to_string();
+}
+
 }  // namespace pkr

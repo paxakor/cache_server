@@ -64,4 +64,7 @@ bool operator<=(string_view, string_view);
 bool operator> (string_view, string_view);
 bool operator>=(string_view, string_view);
 
+std::string operator+(string_view, const std::string&);
+std::string operator+(const std::string&, string_view);
+
 }  // namespace pkr

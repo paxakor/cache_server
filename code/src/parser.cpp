@@ -9,11 +9,7 @@
 
 namespace pkr {
 
-Message parse_header(string_view text) {
-    Message msg;
-    msg.method = Method::UNKNOWN;
-    const auto lines = split(text, "\r\n", 2);
-    const auto& request = lines[0];
+void parse_starting_line(string_view request, Message& msg) {
     const auto args = split(request);
     if (args.size() < 3) {
         if (request.size() <= 80) {
@@ -21,7 +17,7 @@ Message parse_header(string_view text) {
         } else {
             log.message("invalid request line (too long to show)");
         }
-        return msg;
+        return;
     }
     if (args[0] == "GET") {
         msg.method = Method::GET;
@@ -31,6 +27,20 @@ Message parse_header(string_view text) {
         msg.method = Method::POST;
     }
     msg.URI = args[1];
+}
+
+Message parse_header(string_view header) {
+    Message msg;
+    const auto lines = split(header, "\r\n");
+    parse_starting_line(lines[0], msg);
+    for (auto it = lines.begin() + 1; it != lines.end(); ++it) {
+        const auto parts = split_n(*it, 2, ':');
+        if (parts.size() != 2) {
+            log.message("invalid header line: " + *it);
+            continue;
+        }
+        msg.head[parts[0]] = strip(parts[1]);
+    }
     return msg;
 }
 

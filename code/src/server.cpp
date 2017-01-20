@@ -27,14 +27,7 @@ namespace pkr {
 
 void Server::do_get(Client& client, const std::string& url) {
     std::string file_name = working_dir;
-    if (*file_name.rbegin() != '/') {
-        file_name += "/";
-    }
-    if (url == "/" || url == "") {
-        file_name += "index.html";
-    } else {
-        file_name += url;
-    }
+    file_name += (url == "/" || url == "") ? "index.html" : url;
     log.message("open " + file_name);
     std::ifstream file(file_name);
     if (!file) {
@@ -79,13 +72,15 @@ ServerConfig::ServerConfig(const std::string& file_name) {
     uint64_t line_number = 0;
     while (std::getline(cfg_file, line)) {
         ++line_number;
-        const auto parts = split(line, 2);
+        const auto parts = split_n(line, 2);
         if (parts.size() >= 2) {
             if (parts[0] == "dir") {
                 working_dir = parts[1];
-                fs::path p(working_dir);
-                if (!fs::is_directory(p)) {
+                if (!fs::is_directory(working_dir)) {
                     err_msg = "no such directory";
+                }
+                if (*working_dir.rbegin() != '/') {
+                    working_dir += "/";
                 }
             } else if (parts[0] == "port") {
                 port = std::strtoul(parts[1].c_str(), NULL, 10);

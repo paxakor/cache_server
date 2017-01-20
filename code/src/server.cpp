@@ -25,6 +25,24 @@
 
 namespace pkr {
 
+Server::Server(const ServerConfig& cfg)
+    : server_socket(cfg.port)
+    , working_dir(cfg.working_dir)
+    , enabled(true) { }
+
+void Server::start() {
+    log.message("Server started");
+    while (enabled) {
+        Client client(server_socket);
+        log.access(client.get_ip(), client.get_port());
+        interact_connection(client);
+    }
+}
+
+void Server::finish() {
+    enabled = false;
+}
+
 void Server::do_get(Client& client, const std::string& url) {
     std::string file_name = working_dir;
     file_name += (url == "/" || url == "") ? "index.html" : url;
@@ -98,24 +116,6 @@ ServerConfig::ServerConfig(const std::string& file_name) {
                 std::to_string(line_number) + ": " + err_msg + ".");
         }
     }
-}
-
-Server::Server(const ServerConfig& cfg)
-    : server_socket(cfg.port)
-    , working_dir(cfg.working_dir)
-    , enabled(true) { }
-
-void Server::start() {
-    log.message("Server started");
-    while (enabled) {
-        Client client(server_socket);
-        log.access(client.get_ip(), client.get_port());
-        interact_connection(client);
-    }
-}
-
-void Server::finish() {
-    enabled = false;
 }
 
 }  // namespace pkr

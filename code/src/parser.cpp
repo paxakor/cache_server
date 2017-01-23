@@ -35,7 +35,7 @@ Message parse_header(string_view header) {
     parse_starting_line(lines[0], msg);
     for (auto it = lines.begin() + 1; it != lines.end(); ++it) {
         const auto parts = split_n(*it, 2, ':');
-        if (parts.size() != 2) {
+        if (parts.size() != 2 && it->size() != 0) {
             log.message("invalid header line: " + *it);
             continue;
         }

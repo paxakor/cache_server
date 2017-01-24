@@ -1,6 +1,8 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
+#include <cerrno>
 #include <cstddef>
+#include <cstring>
 #include <cstring>
 #include <arpa/inet.h>
 #include <fcntl.h>
@@ -8,6 +10,7 @@
 #include <unistd.h>
 #include <algorithm>
 #include <string>
+#include <stdexcept>
 #include "include/buffer.hpp"
 #include "include/socket.hpp"
 #include "include/string_view.hpp"
@@ -114,15 +117,23 @@ ServerSocket::ServerSocket(Port port)
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
-    bind(handler, reinterpret_cast<const sockaddr*>(&address), sizeof(address));
-    listen(handler, SOMAXCONN);
+    if (bind(handler, reinterpret_cast<const sockaddr*>(&address),
+        sizeof(address)) < 0 || listen(handler, SOMAXCONN) < 0) {
+        static std::string msg = "Unable to create socket: ";
+        throw std::runtime_error(msg + std::strerror(errno));
+    }
 }
 
 void ServerSocket::accept(ClientSocket& client) {
     auto& client_address = client.mutable_address();
     socklen_t client_address_size = sizeof(client_address);
-    client.set_handler(::accept(handler,
-        reinterpret_cast<sockaddr*>(&client_address), &client_address_size));
+    const auto new_client_handler = ::accept(handler,
+        reinterpret_cast<sockaddr*>(&client_address), &client_address_size);
+    if (new_client_handler < 0) {
+        static std::string msg = "Unable to accept: ";
+        throw std::runtime_error(msg + std::strerror(errno));
+    }
+    client.set_handler(new_client_handler);
 }
 
 }  // namespace pkr

@@ -6,7 +6,6 @@
 #include <cstring>
 
 #include <arpa/inet.h>
-#include <ext/stdio_filebuf.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -34,12 +33,16 @@ void Server::start() {
     log.message("Server started");
     while (enabled) {
         Client client(server_socket);
+#ifdef DEBUG
+        std::cout << "Connection established" << std::endl;
+#endif
         log.access(client.get_ip(), client.get_port());
         interact_connection(client);
     }
 }
 
 void Server::finish() {
+    std::cout << "Sever interrupted" << std::endl;
     enabled = false;
 }
 
@@ -62,13 +65,6 @@ void Server::do_get(Client& client, const std::string& url) {
                 log.message("socket.write error");
             }
         } while (file.good());
-
-        // the following code makes the same: it copies file into socket
-        // (possible, it will be useful in the future)
-        // const int hndl = client.get_socket().get_handler();
-        // __gnu_cxx::stdio_filebuf<char> filebuf(hndl, std::ios::out);
-        // std::ostream socket_stream(&filebuf);
-        // socket_stream << file.rdbuf();
     }
 }
 

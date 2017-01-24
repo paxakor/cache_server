@@ -2,16 +2,14 @@
 
 #include <cerrno>
 #include <cstddef>
-#include <cstring>
-#include <cstring>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <algorithm>
 #include <string>
-#include <stdexcept>
 #include "include/buffer.hpp"
+#include "include/log.hpp"
 #include "include/socket.hpp"
 #include "include/string_view.hpp"
 #include "include/utils.hpp"
@@ -119,8 +117,7 @@ ServerSocket::ServerSocket(Port port)
     address.sin_port = htons(port);
     if (bind(handler, reinterpret_cast<const sockaddr*>(&address),
         sizeof(address)) < 0 || listen(handler, SOMAXCONN) < 0) {
-        static std::string msg = "Unable to create socket: ";
-        throw std::runtime_error(msg + std::strerror(errno));
+        die("Unable to create socket: ");
     }
 }
 
@@ -130,8 +127,7 @@ void ServerSocket::accept(ClientSocket& client) {
     const auto new_client_handler = ::accept(handler,
         reinterpret_cast<sockaddr*>(&client_address), &client_address_size);
     if (new_client_handler < 0) {
-        static std::string msg = "Unable to accept: ";
-        throw std::runtime_error(msg + std::strerror(errno));
+        die("Unable to accept: ");
     }
     client.set_handler(new_client_handler);
 }

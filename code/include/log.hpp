@@ -3,8 +3,9 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
+#include <list>
 #include <queue>
+#include <string>
 #include "include/singleton.hpp"
 
 namespace pkr {
@@ -34,9 +35,11 @@ private:
 
 private:
     std::string log_file = "log.txt";
-    std::queue<std::string> records;
+    std::queue<std::string, std::list<std::string>> records;
 };
 
 extern Logger& log;
+
+void die(std::string);
 
 }  // namespace pkr

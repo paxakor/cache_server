@@ -2,9 +2,11 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include "include/log.hpp"
@@ -59,5 +61,11 @@ void Logger::write_to_file() {
 }
 
 Logger& log = Singleton<Logger>::get_inctance();
+
+void die(std::string msg) {
+    msg += std::strerror(errno);
+    log.error(msg);
+    throw std::runtime_error(msg);
+}
 
 }  // namespace pkr

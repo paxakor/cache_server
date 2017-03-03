@@ -1,4 +1,4 @@
-// Copyright 2016-2017, Pavel Korozevtsev.
+// Copyright 2017, Pavel Korozevtsev.
 
 #include <cstdio>
 #include <cstdlib>
@@ -10,9 +10,9 @@
 #include <unistd.h>
 #include "stopwatch.hpp"
 
-void error(const char *msg) {
+void error(const char* msg) {
     perror(msg);
-    exit(0);
+    exit(1);
 }
 
 int main(int argc, char** argv) {
@@ -31,14 +31,15 @@ int main(int argc, char** argv) {
         fprintf(stderr, "ERROR, no such host\n");
         exit(0);
     }
-    bzero(&serv_addr, sizeof(serv_addr));
+    memset(&serv_addr, 0, sizeof(serv_addr));
     memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(portno);
 
     Stopwatch sw("DUDOS");
+    const std::string request = "GET / HTTP/1.0\r\n" +
+        std::string(argv[1]) + "\r\n\r\n";
     for (int i = 0; i < n; ++i) {
-        static const char* request = "GET / HTTP/1.1\r\n\r\n";
         char buffer[256] = {0};
         int sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
@@ -48,12 +49,13 @@ int main(int argc, char** argv) {
             sizeof(serv_addr)) < 0) {
             error("ERROR connecting");
         }
-        if (write(sockfd, request, strlen(request)) < 0) {
+        if (write(sockfd, request.c_str(), request.size()) < 0) {
             error("ERROR writing to socket");
         }
         if (read(sockfd, buffer, sizeof(buffer) - 1) < 0) {
             error("ERROR reading from socket");
         }
+        printf("%s\n", buffer);
         close(sockfd);
     }
     return 0;

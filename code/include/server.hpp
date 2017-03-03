@@ -4,6 +4,7 @@
 
 #include <string>
 #include "include/client.hpp"
+#include "include/parser.hpp"
 #include "include/socket.hpp"
 
 namespace pkr {
@@ -22,9 +23,9 @@ public:
     Server(const ServerConfig&);
     void start();
     void finish();
+    void do_get(Client&, const Message&);
 
 private:
-    void do_get(Client&, const std::string&);
     void interact_connection(Client&);
 
 private:

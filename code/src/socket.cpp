@@ -115,8 +115,8 @@ ServerSocket::ServerSocket(Port port)
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
-    if (bind(handler, reinterpret_cast<const sockaddr*>(&address),
-        sizeof(address)) < 0 || listen(handler, SOMAXCONN) < 0) {
+    if (bind(get_handler(), reinterpret_cast<const sockaddr*>(&address),
+        sizeof(address)) < 0 || listen(get_handler(), SOMAXCONN) < 0) {
         die("Unable to create socket: ");
     }
 }
@@ -124,7 +124,7 @@ ServerSocket::ServerSocket(Port port)
 void ServerSocket::accept(ClientSocket& client) {
     auto& client_address = client.mutable_address();
     socklen_t client_address_size = sizeof(client_address);
-    const auto new_client_handler = ::accept(handler,
+    const auto new_client_handler = ::accept(get_handler(),
         reinterpret_cast<sockaddr*>(&client_address), &client_address_size);
     if (new_client_handler < 0) {
         die("Unable to accept: ");

@@ -46,10 +46,10 @@ void Server::finish() {
     enabled = false;
 }
 
-void Server::do_get(Client& client, const std::string& url) {
-    log.message(url + " requested");
+void Server::do_get(Client& client, const Message& msg) {
+    log.message(msg.url + " requested");
     std::string file_name = working_dir;
-    file_name += (url == "/" || url == "") ? "index.html" : url;
+    file_name += (msg.url == "/" || msg.url == "") ? "index.html" : msg.url;
     std::ifstream file(file_name);
     if (!file) {
         log.message(file_name + " not found. 404");
@@ -76,7 +76,7 @@ void Server::interact_connection(Client& client) {
 #endif
     switch (msg.method) {
         case Method::GET:
-            do_get(client, msg.URI);
+            do_get(client, msg);
             break;
         case Method::POST:
             // do_post(client, cmd_arg);

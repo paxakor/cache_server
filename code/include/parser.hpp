@@ -21,7 +21,7 @@ enum class Method {
 
 struct Message {
     Method method = Method::UNKNOWN;
-    std::string URI;
+    std::string url;
     Header head;
     std::string body;
 };

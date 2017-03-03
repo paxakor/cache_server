@@ -26,7 +26,7 @@ void parse_starting_line(string_view request, Message& msg) {
     } else if (args[0] == "POST") {
         msg.method = Method::POST;
     }
-    msg.URI = args[1];
+    msg.url = args[1];
 }
 
 Message parse_header(string_view header) {
@@ -58,7 +58,7 @@ std::string debug_header(const Message& msg) {
     } else {
         header += "UNKNOWN ";
     }
-    header += msg.URI;
+    header += msg.url;
     header += " HTTP/xxx\r\n";
     for (const auto& param : msg.head) {
         header += param.first;

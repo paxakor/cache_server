@@ -63,7 +63,24 @@ ssize_t Socket::read_unbuf(char* dest, size_t nbyte) {
     return ::read(get_handler(), dest, nbyte);
 }
 
-std::string Socket::read_header() {
+ssize_t Socket::write(const std::string& buf) {
+    return write(buf.data(), buf.size());
+}
+
+ssize_t Socket::write(const void* buf, size_t nbyte) {
+    return ::write(get_handler(), buf, nbyte);
+}
+
+ssize_t Socket::fill_buffer() {
+    const auto len = buffer_in.size();
+    const auto nb = read_unbuf(buffer_in.buf + len, buffer_in.capacity() - len);
+    if (nb > 0) {
+        buffer_in.len += nb;
+    }
+    return nb;
+}
+
+std::string ClientSocket::read_header() {
     std::string header;
     // There is a finite-state automaton emulation.
     // States:
@@ -93,23 +110,6 @@ std::string Socket::read_header() {
     return header;
 }
 
-ssize_t Socket::write(const std::string& buf) {
-    return write(buf.data(), buf.size());
-}
-
-ssize_t Socket::write(const void* buf, size_t nbyte) {
-    return ::write(get_handler(), buf, nbyte);
-}
-
-ssize_t Socket::fill_buffer() {
-    const auto len = buffer_in.size();
-    const auto nb = read_unbuf(buffer_in.buf + len, buffer_in.capacity() - len);
-    if (nb > 0) {
-        buffer_in.len += nb;
-    }
-    return nb;
-}
-
 ServerSocket::ServerSocket(Port port)
     : Socket(socket(AF_INET, SOCK_STREAM, 0)) {
     address.sin_addr.s_addr = INADDR_ANY;
@@ -121,15 +121,17 @@ ServerSocket::ServerSocket(Port port)
     }
 }
 
-void ServerSocket::accept(ClientSocket& client) {
+ClientSocket accept_client(ServerSocket& serv_sock) {
+    ClientSocket client;
     auto& client_address = client.mutable_address();
     socklen_t client_address_size = sizeof(client_address);
-    const auto new_client_handler = ::accept(get_handler(),
+    const auto new_client_handler = ::accept(serv_sock.get_handler(),
         reinterpret_cast<sockaddr*>(&client_address), &client_address_size);
     if (new_client_handler < 0) {
         die("Unable to accept: ");
     }
     client.set_handler(new_client_handler);
+    return client;
 }
 
 }  // namespace pkr

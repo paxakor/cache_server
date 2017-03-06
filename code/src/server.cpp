@@ -32,7 +32,7 @@ Server::Server(const ServerConfig& cfg)
 void Server::start() {
     log.message("Server started");
     while (enabled) {
-        Client client(server_socket);
+        Client client(accept_client(server_socket));
 #ifdef DEBUG
         std::cout << "Connection established" << std::endl;
 #endif
@@ -61,7 +61,7 @@ void Server::do_get(Client& client, const Message& msg) {
         do {
             file.read(buffer, sizeof(buffer));
             const auto len = file.gcount();
-            if (client.mutable_socket().write(buffer, len) != len) {
+            if (client.write(buffer, len) != len) {
                 log.message("socket.write error");
             }
         } while (file.good());
@@ -69,7 +69,7 @@ void Server::do_get(Client& client, const Message& msg) {
 }
 
 void Server::interact_connection(Client& client) {
-    const auto header = client.mutable_socket().read_header();
+    const auto header = client.read_header();
     const auto msg = parse_header(header);
 #ifdef DEBUG
     std::cout << debug_header(msg) << std::endl;

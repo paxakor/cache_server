@@ -28,6 +28,6 @@ public:
 
 private:
     const std::string name;
-    double start;
+    const double start;
     bool ended = false;
 };

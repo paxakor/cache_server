@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -30,6 +31,7 @@ void Logger::error(const std::string& msg) {
     static const std::string prefix = "Error: ";
     add_rec(prefix + msg);
     write_to_file();
+    throw std::runtime_error(msg);
 }
 
 void Logger::fatal_error(const std::string& msg) {
@@ -65,7 +67,6 @@ Logger& log = Singleton<Logger>::get_inctance();
 void die(std::string msg) {
     msg += std::strerror(errno);
     log.error(msg);
-    throw std::runtime_error(msg);
 }
 
 }  // namespace pkr

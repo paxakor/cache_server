@@ -20,7 +20,7 @@ class Socket {
 public:
     virtual ~Socket();
     Socket(const Socket&) = delete;
-    Socket(Socket&&) = default;
+    Socket(Socket&&);
     sockaddr_in get_address() const;
     sockaddr_in& mutable_address();
     std::string read(size_t);
@@ -37,8 +37,9 @@ protected:
 
 protected:
     Buffer<1024> buffer_in;  // buffer size = 1KiB
-    int handler;
     sockaddr_in address;
+    int handler;
+    bool valid = true;
 };
 
 class ClientSocket : public Socket {

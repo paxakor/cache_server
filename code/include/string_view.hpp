@@ -50,7 +50,7 @@ public:
     size_type find(string_view, size_type = 0) const;
 
 public:
-    static size_type npos;
+    enum : size_type { npos = static_cast<size_type>(-1) };
 
 protected:
     const_pointer ptr = nullptr;

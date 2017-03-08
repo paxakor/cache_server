@@ -17,10 +17,23 @@
 namespace pkr {
 
 Socket::Socket(int h)
-    : handler(h) { }
+    : handler(h) {
+    if (handler < 0) {
+        log.error("invalid socket");
+    }
+}
+
+Socket::Socket(Socket&& other)
+    : buffer_in(std::move(buffer_in))
+    , address(std::move(other.address))
+    , handler(std::move(other.handler)) {
+    other.valid = false;
+}
 
 Socket::~Socket() {
-    close(handler);
+    if (valid) {
+        close(handler);
+    }
 }
 
 int Socket::get_handler() const {

@@ -21,15 +21,15 @@ int main(int argc, char** argv) {
     struct hostent* server;
 
     if (argc < 3) {
-       fprintf(stderr, "usage: %s hostname port count\n", argv[0]);
-       exit(0);
+        fprintf(stderr, "usage: %s hostname port count\n", argv[0]);
+        return 1;
     }
     portno = atoi(argv[2]);
     n = atoi(argv[3]);
     server = gethostbyname(argv[1]);
     if (!server) {
         fprintf(stderr, "ERROR, no such host\n");
-        exit(0);
+        return 1;
     }
     memset(&serv_addr, 0, sizeof(serv_addr));
     memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
     serv_addr.sin_port = htons(portno);
 
     Stopwatch sw("DUDOS");
-    const std::string request = "GET / HTTP/1.0\r\n" +
+    const std::string request = "GET / HTTP/1.0\r\nHost: " +
         std::string(argv[1]) + "\r\n\r\n";
     for (int i = 0; i < n; ++i) {
         char buffer[256] = {0};

@@ -9,7 +9,7 @@
 
 namespace pkr {
 
-void parse_starting_line(string_view request, Message& msg) {
+void parse_first_line(string_view request, Message& msg) {
     const auto args = split(request);
     if (args.size() < 3) {
         if (request.size() <= 80) {
@@ -32,7 +32,7 @@ void parse_starting_line(string_view request, Message& msg) {
 Message parse_header(string_view header) {
     Message msg;
     const auto lines = split(header, "\r\n");
-    parse_starting_line(lines[0], msg);
+    parse_first_line(lines[0], msg);
     for (auto it = lines.begin() + 1; it != lines.end(); ++it) {
         const auto parts = split_n(*it, 2, ':');
         if (parts.size() != 2) {

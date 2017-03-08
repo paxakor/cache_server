@@ -8,8 +8,6 @@
 
 namespace pkr {
 
-string_view::size_type string_view::npos = static_cast<size_type>(-1);
-
 string_view::string_view(const std::string& s)
     : ptr(s.data())
     , len(s.size()) { }

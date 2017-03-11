@@ -33,9 +33,7 @@ void Server::start() {
     log.message("Server started");
     while (enabled) {
         Client client(accept_client(server_socket));
-#ifdef DEBUG
-        std::cout << "Connection established" << std::endl;
-#endif
+        DO_DEBUG(std::cout << "Connection established" << std::endl);
         log.access(client.get_ip(), client.get_port());
         interact_connection(client);
     }
@@ -57,11 +55,11 @@ void Server::do_get(Client& client, const Message& msg) {
     } else {
         log.message(file_name + " opened");
         client.write_response(200, fs::file_size(file_name));
-        char buffer[65536];
+        char buffer[MAX_REQUEST_SIZE];
         do {
             file.read(buffer, sizeof(buffer));
             const auto len = file.gcount();
-            if (client.write(buffer, len) != len) {
+            if (write(client, {buffer, static_cast<size_t>(len)}) != len) {
                 log.message("socket.write error");
             }
         } while (file.good());
@@ -69,11 +67,10 @@ void Server::do_get(Client& client, const Message& msg) {
 }
 
 void Server::interact_connection(Client& client) {
-    const auto header = client.read_header();
+    const auto request = read(client);
+    const auto header = find_header(request);
     const auto msg = parse_header(header);
-#ifdef DEBUG
-    std::cout << debug_header(msg) << std::endl;
-#endif
+    DO_DEBUG(std::cout << debug_header(msg) << std::endl);
     switch (msg.method) {
         case Method::GET:
             do_get(client, msg);
@@ -105,7 +102,8 @@ ServerConfig::ServerConfig(const std::string& file_name) {
                     working_dir += "/";
                 }
             } else if (parts[0] == "port") {
-                port = std::strtoul(parts[1].c_str(), NULL, 10);
+                port = std::strtoul(std::string(parts[1].data(),
+                    parts[1].size()).c_str(), NULL, 10);
                 if (!(1000 < port && port < ((1 << 16) - 1))) {  // TODO
                     err_msg = "invalid port";
                 }

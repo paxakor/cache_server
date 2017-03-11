@@ -23,6 +23,7 @@ public:
     string_view(const std::string&);
     string_view(const_pointer, size_type);
     string_view(const_pointer);
+    string_view(const_iterator, const_iterator);
 
     iterator begin();
     iterator end();

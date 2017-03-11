@@ -30,7 +30,7 @@ def split_test(N, L):
     def decoder(out):
         return (out if out[-1] != '\n' else out[:-1]).split('\n')
 
-    args = ['./ut/utils', 'space']
+    args = ['tests/ut/utils', 'space']
     res = test.test(seed_gen, data_gen, args, solver, decoder)
     if res != True:
         print(res, file = open("utils.log", 'w'))
@@ -55,7 +55,7 @@ def split_by_pattern_test(N, L):
     def decoder(out):
         return (out if out[-1] != '\n' else out[:-1]).split('\n')
 
-    args = ['./ut/utils', 'pattern']
+    args = ['tests/ut/utils', 'pattern']
     res = test.test(seed_gen, data_gen, args, solver, decoder)
     if res != True:
         print(res, file = open("utils.log", 'w'))

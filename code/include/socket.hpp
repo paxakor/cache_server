@@ -5,42 +5,47 @@
 #include <cstddef>
 #include <arpa/inet.h>
 #include <string>
-#include "include/buffer.hpp"
 #include "include/string_view.hpp"
 
 namespace pkr {
+
+class FileDescriptor {
+public:
+    enum : size_t { MAX_REQUEST_SIZE = 65536 };
+public:
+    FileDescriptor(int);
+    virtual ~FileDescriptor();
+    FileDescriptor(const FileDescriptor&) = delete;
+    FileDescriptor(FileDescriptor&&);
+    ssize_t read(char*, size_t);
+    ssize_t write(const void*, size_t);
+
+protected:
+    int handler;
+};
+
+std::string read(FileDescriptor&, size_t);
+ssize_t write(FileDescriptor&, string_view);
+
+class Socket : public FileDescriptor {
+public:
+    Socket(const Socket&) = delete;
+    Socket(Socket&&) = default;
+    sockaddr_in get_address() const;
+    sockaddr_in& mutable_address();
+
+protected:
+    Socket(int);
+
+protected:
+    sockaddr_in address;
+};
 
 class ClientSocket;
 class ServerSocket;
 ClientSocket accept_client(ServerSocket&);
 
 using Port = uint16_t;
-
-class Socket {
-public:
-    virtual ~Socket();
-    Socket(const Socket&) = delete;
-    Socket(Socket&&);
-    sockaddr_in get_address() const;
-    sockaddr_in& mutable_address();
-    std::string read(size_t);
-    ssize_t read(char*, size_t);
-    ssize_t write(const std::string&);
-    ssize_t write(const void*, size_t);
-
-protected:
-    Socket(int);
-    int get_handler() const;
-    void set_handler(int);
-    ssize_t read_unbuf(char*, size_t);
-    ssize_t fill_buffer();
-
-protected:
-    Buffer<1024> buffer_in;  // buffer size = 1KiB
-    sockaddr_in address;
-    int handler;
-    bool valid = true;
-};
 
 class ClientSocket : public Socket {
     friend ClientSocket accept_client(ServerSocket&);

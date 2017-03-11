@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include "include/socket.hpp"
+#include "include/string_view.hpp"
 
 namespace pkr {
 
@@ -14,10 +15,10 @@ public:
     Client(ClientSocket);
     Port get_port() const;
     std::string get_ip() const;
+    std::string read(size_t);
     ssize_t write_failure(int, const std::string&);
     ssize_t write_response(int, size_t);
-    template<typename... Ts> ssize_t write(Ts&&...);
-    std::string read_header();
+    ssize_t write(string_view);
 
 private:
     ClientSocket socket;
@@ -25,9 +26,7 @@ private:
     std::array<char, INET_ADDRSTRLEN> ip;
 };
 
-template<typename... Ts>
-ssize_t Client::write(Ts&&... vars) {
-    return socket.write(std::forward<Ts>(vars)...);
-}
+std::string read(Client&, size_t = FileDescriptor::MAX_REQUEST_SIZE);
+ssize_t write(Client&, string_view);
 
 }  // namespace pkr

@@ -20,6 +20,9 @@ public:
 
 class Server {
 public:
+    enum : size_t { MAX_REQUEST_SIZE = FileDescriptor::MAX_REQUEST_SIZE };
+
+public:
     Server(const ServerConfig&);
     void start();
     void finish();

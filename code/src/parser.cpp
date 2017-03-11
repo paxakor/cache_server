@@ -1,5 +1,7 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
+#include <algorithm>
+#include <iterator>
 #include <string>
 #include <vector>
 #include "include/log.hpp"
@@ -67,6 +69,12 @@ std::string debug_header(const Message& msg) {
         header += "\r\n";
     }
     return header;
+}
+
+string_view find_header(string_view request) {
+    constexpr char delim[] = "\r\n";
+    return {request.begin(), std::search(request.begin(), request.end(),
+        std::begin(delim), std::end(delim))};
 }
 
 }  // namespace pkr

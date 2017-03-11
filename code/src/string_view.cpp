@@ -20,6 +20,8 @@ string_view::string_view(const_pointer p)
     : ptr(p)
     , len(strlen(p)) { }
 
+string_view::string_view(const_iterator begin, const_iterator end)
+    : string_view(begin, static_cast<size_type>(end - begin)) { }
 
 string_view::iterator string_view::begin() {
     return ptr;

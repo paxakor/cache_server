@@ -28,5 +28,6 @@ struct Message {
 
 Message parse_header(string_view);
 std::string debug_header(const Message&);
+string_view find_header(string_view);
 
 }  // namespace pkr

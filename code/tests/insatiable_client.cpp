@@ -10,12 +10,8 @@
 #include <unistd.h>
 #include "stopwatch.hpp"
 
-void error(const char* msg) {
-    perror(msg);
-    exit(1);
-}
-
 int main(int argc, char** argv) {
+    enum { FILESZ = 4096 };
     int portno, n;
     struct sockaddr_in serv_addr;
     struct hostent* server;
@@ -39,24 +35,38 @@ int main(int argc, char** argv) {
     Stopwatch sw("DUDOS");
     const std::string request = "GET / HTTP/1.0\r\nHost: " +
         std::string(argv[1]) + "\r\n\r\n";
+    char file[FILESZ];
     for (int i = 0; i < n; ++i) {
-        char buffer[256] = {0};
+        char buffer[FILESZ] = {0};
         int sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
-            error("ERROR opening socket");
+            perror("ERROR opening socket");
+            return 1;
         }
         if (connect(sockfd, reinterpret_cast<struct sockaddr*>(&serv_addr),
             sizeof(serv_addr)) < 0) {
-            error("ERROR connecting");
+            perror("ERROR connecting");
+            return 1;
         }
         if (write(sockfd, request.c_str(), request.size()) < 0) {
-            error("ERROR writing to socket");
+            perror("ERROR writing to socket");
+            return 1;
         }
-        if (read(sockfd, buffer, sizeof(buffer) - 1) < 0) {
-            error("ERROR reading from socket");
+        ssize_t sz = 0;
+        ssize_t len;
+        while ((len = read(sockfd, buffer + sz, sizeof(buffer) - sz)) > 0) {
+            sz += len;
         }
-        printf("%s\n", buffer);
+        buffer[sz] = 0;
         close(sockfd);
+        if (i == 0) {
+            strncpy(file, buffer, FILESZ);
+        } else {
+            if (strncmp(file, buffer, FILESZ)) {
+                printf("insatiable_client's error: files are not equal\n");
+                return 1;
+            }
+        }
     }
     return 0;
 }

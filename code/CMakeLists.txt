@@ -18,22 +18,7 @@ set(SOURCES
     src/utils.cpp
     )
 
-set(HEADERS
-    include/args_parser.hpp
-    include/buffer.hpp
-    include/client.hpp
-    include/filesystem.hpp
-    include/log.hpp
-    include/parser.hpp
-    include/server.hpp
-    include/signal.hpp
-    include/singleton.hpp
-    include/socket.hpp
-    include/string_view.hpp
-    include/utils.hpp
-    )
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra -Wpedantic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wpedantic")
 
 
 

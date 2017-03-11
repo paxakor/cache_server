@@ -3,7 +3,7 @@ project(server)
 
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-add_subdirectory(ut)
+add_subdirectory(tests)
 
 set(SOURCES
     src/args_parser.cpp

@@ -8,11 +8,19 @@
 
 namespace pkr {
 
-std::string strip(string_view);
-std::vector<std::string> split(string_view, char = 0);
-std::vector<std::string> split(string_view, string_view);
-std::vector<std::string> split_n(string_view, size_t, char = 0);
-std::vector<std::string> split_n(string_view, size_t, string_view);
-const char* search(const char*, const char*, string_view);
+std::vector<string_view::iterator> find_all(string_view, string_view);
+std::vector<string_view> split(string_view);
+std::vector<string_view> split(string_view, char);
+std::vector<string_view> split(string_view, string_view);
+std::vector<string_view> split_n(string_view, size_t);
+std::vector<string_view> split_n(string_view, size_t, char);
+std::vector<string_view> split_n(string_view, size_t, string_view);
+string_view strip(string_view);
+
+#ifdef DEBUG
+#define DO_DEBUG(expr) expr
+#else
+#define DO_DEBUG(expr)
+#endif
 
 }  // namespace pkr

@@ -3,20 +3,12 @@
 #pragma once
 
 #include <string>
+#include "include/args_parser.hpp"
 #include "include/client.hpp"
 #include "include/parser.hpp"
 #include "include/socket.hpp"
 
 namespace pkr {
-
-class ServerConfig {
-public:
-    ServerConfig(const std::string&);
-
-public:
-    Port port = 31337;
-    std::string working_dir = "./";
-};
 
 class Server {
 public:

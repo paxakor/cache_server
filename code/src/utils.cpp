@@ -6,6 +6,7 @@
 #include <iterator>
 #include <limits>
 #include <vector>
+#include "include/defs.hpp"
 #include "include/string_view.hpp"
 #include "include/utils.hpp"
 

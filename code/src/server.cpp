@@ -15,6 +15,7 @@
 #include <string>
 
 #include "include/client.hpp"
+#include "include/defs.hpp"
 #include "include/filesystem.hpp"
 #include "include/log.hpp"
 #include "include/parser.hpp"
@@ -82,41 +83,6 @@ void Server::interact_connection(Client& client) {
             client.write_failure(400, "Bad Request");
             log.message("invalid command");
             break;
-    }
-}
-
-ServerConfig::ServerConfig(const std::string& file_name) {
-    std::ifstream cfg_file(file_name);
-    std::string line, err_msg;
-    uint64_t line_number = 0;
-    while (std::getline(cfg_file, line)) {
-        ++line_number;
-        const auto parts = split_n(line, 2);
-        if (parts.size() >= 2) {
-            if (parts[0] == "dir") {
-                working_dir = parts[1];
-                if (!fs::is_directory(working_dir)) {
-                    err_msg = "no such directory";
-                }
-                if (*working_dir.rbegin() != '/') {
-                    working_dir += "/";
-                }
-            } else if (parts[0] == "port") {
-                port = std::strtoul(std::string(parts[1].data(),
-                    parts[1].size()).c_str(), NULL, 10);
-                if (!(1000 < port && port < ((1 << 16) - 1))) {  // TODO
-                    err_msg = "invalid port";
-                }
-            } else {
-                err_msg = "no such option";
-            }
-        } else {
-            err_msg = "too few arguments";
-        }
-        if (!err_msg.empty()) {
-            log.fatal_error("Invalid config line " +
-                std::to_string(line_number) + ": " + err_msg + ".");
-        }
     }
 }
 

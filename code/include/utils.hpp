@@ -17,10 +17,4 @@ std::vector<string_view> split_n(string_view, size_t, char);
 std::vector<string_view> split_n(string_view, size_t, string_view);
 string_view strip(string_view);
 
-#ifdef DEBUG
-#define DO_DEBUG(expr) expr
-#else
-#define DO_DEBUG(expr)
-#endif
-
 }  // namespace pkr

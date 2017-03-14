@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <arpa/inet.h>
 #include <string>
+#include "include/defs.hpp"
 #include "include/string_view.hpp"
 
 namespace pkr {
@@ -44,8 +45,6 @@ protected:
 class ClientSocket;
 class ServerSocket;
 ClientSocket accept_client(ServerSocket&);
-
-using Port = uint16_t;
 
 class ClientSocket : public Socket {
     friend ClientSocket accept_client(ServerSocket&);

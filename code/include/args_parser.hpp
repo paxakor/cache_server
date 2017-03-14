@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include "include/defs.hpp"
 
 namespace pkr {
 
@@ -28,6 +29,17 @@ private:
 
 private:
     const ArgList list;
+};
+
+class ServerConfig {
+public:
+    ServerConfig(const std::string&);
+private:
+    void error(const std::string&, size_t);
+
+public:
+    Port port = 31337;
+    std::string working_dir = "./";
 };
 
 }  // namespace pkr

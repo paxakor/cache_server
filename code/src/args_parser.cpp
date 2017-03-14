@@ -2,10 +2,15 @@
 
 #include <cstdlib>
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
 #include "include/args_parser.hpp"
+#include "include/defs.hpp"
+#include "include/filesystem.hpp"
+#include "include/log.hpp"
+#include "include/utils.hpp"
 
 namespace pkr {
 
@@ -57,8 +62,42 @@ void ServerArgs::print_usage() const {
         "  -c <file>:  read configuration from <file>\n"
         "  -h, --help: print this message and exit\n"
         << std::flush;
-        std::exit(0);
+    std::exit(0);
 }
 
+
+ServerConfig::ServerConfig(const std::string& file_name) {
+    std::ifstream cfg_file(file_name);
+    std::string line;
+    size_t line_number = 0;
+    while (std::getline(cfg_file, line)) {
+        ++line_number;
+        const auto parts = split_n(line, 2);
+        if (parts.size() < 2) {
+            error("too few arguments", line_number);
+        }
+        if (parts[0] == "dir") {
+            working_dir = parts[1];
+            if (!fs::is_directory(working_dir)) {
+                error("no such directory", line_number);
+            }
+            if (working_dir.back() != '/') {
+                working_dir += "/";
+            }
+        } else if (parts[0] == "port") {
+            port = std::strtoul(parts[1].data(), NULL, 10);
+            if (!(1000 < port && port < ((1 << 16) - 1))) {  // TODO
+                error("invalid port", line_number);
+            }
+        } else {
+            error("no such option", line_number);
+        }
+    }
+}
+
+void ServerConfig::error(const std::string& msg, size_t nline) {
+    log.fatal_error("Invalid config line " +
+        std::to_string(nline) + ": " + msg + ".");
+}
 
 }  // namespace pkr

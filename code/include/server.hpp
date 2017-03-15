@@ -17,13 +17,13 @@ public:
     Server(const ServerConfig&);
     void start();
     void finish();
-    void do_get(ClientSocket&, const Message&);
+    void do_get(Socket&, const Message&);
 
 private:
-    void interact_connection(ClientSocket&);
+    void interact_connection(Socket&);
 
 private:
-    ServerSocket server_socket;
+    Socket server_socket;
     std::string working_dir;
     bool enabled;
 };

@@ -25,14 +25,14 @@
 namespace pkr {
 
 Server::Server(const ServerConfig& cfg)
-    : server_socket(cfg.port)
+    : server_socket(make_server_socket(cfg.port))
     , working_dir(cfg.working_dir)
     , enabled(true) { }
 
 void Server::start() {
     log.message("Server started");
     while (enabled) {
-        auto client = accept_client(server_socket);
+        Socket client(accept_client(server_socket));
         DO_DEBUG(std::cout << "Connection established" << std::endl);
         interact_connection(client);
     }
@@ -43,7 +43,7 @@ void Server::finish() {
     enabled = false;
 }
 
-void Server::do_get(ClientSocket& client, const Message& msg) {
+void Server::do_get(Socket& client, const Message& msg) {
     log.message(msg.url + " requested");
     std::string file_name = working_dir;
     file_name += (msg.url == "/" || msg.url == "") ? "index.html" : msg.url;
@@ -65,7 +65,7 @@ void Server::do_get(ClientSocket& client, const Message& msg) {
     }
 }
 
-void Server::interact_connection(ClientSocket& client) {
+void Server::interact_connection(Socket& client) {
     const auto request = read(client);
     const auto header = find_header(request);
     const auto msg = parse_header(header);

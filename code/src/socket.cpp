@@ -17,6 +17,17 @@
 
 namespace pkr {
 
+DescriptorRef::DescriptorRef(const FileDescriptor& fd)
+    : handler(fd.handler) {}
+
+DescriptorHolder::DescriptorHolder(DescriptorHolder&& other)
+    : handler(std::move(other.handler)) {
+    other.handler = -1;
+}
+
+DescriptorHolder::DescriptorHolder(int h)
+    : handler(h) {}
+
 FileDescriptor::FileDescriptor(int h)
     : handler(h) {
     if (handler < 0) {
@@ -25,6 +36,11 @@ FileDescriptor::FileDescriptor(int h)
 }
 
 FileDescriptor::FileDescriptor(FileDescriptor&& other)
+    : handler(std::move(other.handler)) {
+    other.handler = -1;
+}
+
+FileDescriptor::FileDescriptor(DescriptorHolder&& other)
     : handler(std::move(other.handler)) {
     other.handler = -1;
 }
@@ -57,47 +73,45 @@ ssize_t write(FileDescriptor& fd, string_view buf) {
     return fd.write(buf.data(), buf.size());
 }
 
-Socket::Socket(int h)
-    : FileDescriptor(h) {}
-
-ClientSocket::ClientSocket(int h)
-    : Socket(h) {}
-
-ServerSocket::ServerSocket(Port port)
-    : Socket(socket(AF_INET, SOCK_STREAM, 0)) {
+DescriptorHolder make_server_socket(Port port) {
+    DescriptorHolder serv(socket(AF_INET, SOCK_STREAM, 0));
     sockaddr_in address;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
-    if (bind(handler, reinterpret_cast<const sockaddr*>(&address),
-        sizeof(address)) < 0 || listen(handler, SOMAXCONN) < 0) {
+    if (bind(serv.handler, reinterpret_cast<const sockaddr*>(&address),
+        sizeof(address)) < 0 || listen(serv.handler, SOMAXCONN) < 0) {
         die("Unable to create socket: ");
     }
+    return serv;
 }
 
-ClientSocket accept_client(ServerSocket& serv_sock) {
+int accept_client_helper(int serv_sock_fd) {
     sockaddr_in client_address;
     socklen_t client_address_size = sizeof(client_address);
-    const auto new_client_handler = ::accept(serv_sock.handler,
+    const auto new_client_handler = ::accept(serv_sock_fd,
         reinterpret_cast<sockaddr*>(&client_address), &client_address_size);
-    if (new_client_handler < 0) {
-        die("Unable to accept: ");
+    if (new_client_handler >= 0) {
+        char ip[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &client_address.sin_addr, ip, sizeof(ip));
+        log.access(ip, ntohs(client_address.sin_port));
     }
-    char ip[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &client_address.sin_addr, ip, sizeof(ip));
-    log.access(ip, ntohs(client_address.sin_port));
-    return {new_client_handler};
+    return new_client_handler;
 }
 
-ssize_t write_failure(ClientSocket& cls, int status, string_view msg) {
-    char headers[2048];
+DescriptorHolder accept_client(DescriptorRef serv_sock) {
+    return {accept_client_helper(serv_sock.handler)};
+}
+
+ssize_t write_failure(Socket& cls, int status, string_view msg) {
+    char headers[256];
     snprintf(headers, sizeof(headers), "HTTP/1.0 %d %s\r\n", status,
-        msg.data());
+        msg.to_string().c_str());
     return write(cls, {headers, strlen(headers)});
 }
 
-ssize_t write_response(ClientSocket& cls, int status, size_t file_size) {
-    char headers[2048];
+ssize_t write_response(Socket& cls, int status, size_t file_size) {
+    char headers[256];
     snprintf(headers, sizeof(headers),
         "HTTP/1.0 %d OK\r\n"
         "Content-Length: %lu\r\n"

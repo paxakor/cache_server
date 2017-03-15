@@ -17,13 +17,13 @@ class DescriptorRef;
 class DescriptorHolder;
 class FileDescriptor;
 
-class DescriptorRef : public Handler {
+class DescriptorRef : private Handler {
     friend DescriptorHolder accept_client(DescriptorRef);
 public:
     DescriptorRef(const FileDescriptor&);
 };
 
-class DescriptorHolder : public Handler {
+class DescriptorHolder : private Handler {
     friend class FileDescriptor;
     friend DescriptorHolder accept_client(DescriptorRef);
     friend DescriptorHolder make_server_socket(Port);
@@ -33,7 +33,7 @@ protected:
     DescriptorHolder(int);
 };
 
-class FileDescriptor : public Handler {
+class FileDescriptor : private Handler {
     friend class DescriptorRef;
 public:
     enum : size_t { max_request_size = 65536 };

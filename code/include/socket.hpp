@@ -9,19 +9,21 @@
 
 namespace pkr {
 
+struct Handler {
+    int handler;
+};
+
 class DescriptorRef;
 class DescriptorHolder;
 class FileDescriptor;
 
-class DescriptorRef {
+class DescriptorRef : public Handler {
     friend DescriptorHolder accept_client(DescriptorRef);
 public:
     DescriptorRef(const FileDescriptor&);
-protected:
-    int handler;
 };
 
-class DescriptorHolder {
+class DescriptorHolder : public Handler {
     friend class FileDescriptor;
     friend DescriptorHolder accept_client(DescriptorRef);
     friend DescriptorHolder make_server_socket(Port);
@@ -29,11 +31,9 @@ public:
     DescriptorHolder(DescriptorHolder&&);
 protected:
     DescriptorHolder(int);
-protected:
-    int handler;
 };
 
-class FileDescriptor {
+class FileDescriptor : public Handler {
     friend class DescriptorRef;
 public:
     enum : size_t { max_request_size = 65536 };
@@ -46,8 +46,6 @@ public:
     ssize_t write(const void*, size_t);
 protected:
     FileDescriptor(int);
-protected:
-    int handler;
 };
 
 using Socket = FileDescriptor;

@@ -18,30 +18,30 @@
 namespace pkr {
 
 DescriptorRef::DescriptorRef(const FileDescriptor& fd)
-    : handler(fd.handler) {}
+    : Handler{fd.handler} {}
 
 DescriptorHolder::DescriptorHolder(DescriptorHolder&& other)
-    : handler(std::move(other.handler)) {
+    : Handler{std::move(other.handler)} {
     other.handler = -1;
 }
 
 DescriptorHolder::DescriptorHolder(int h)
-    : handler(h) {}
+    : Handler{h} {}
 
 FileDescriptor::FileDescriptor(int h)
-    : handler(h) {
+    : Handler{h} {
     if (handler < 0) {
         log.error("invalid fildes");
     }
 }
 
 FileDescriptor::FileDescriptor(FileDescriptor&& other)
-    : handler(std::move(other.handler)) {
+    : Handler{std::move(other.handler)} {
     other.handler = -1;
 }
 
 FileDescriptor::FileDescriptor(DescriptorHolder&& other)
-    : handler(std::move(other.handler)) {
+    : Handler{std::move(other.handler)} {
     other.handler = -1;
 }
 

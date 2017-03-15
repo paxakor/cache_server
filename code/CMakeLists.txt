@@ -7,7 +7,6 @@ add_subdirectory(tests)
 
 set(SOURCES
     src/args_parser.cpp
-    src/client.cpp
     src/log.cpp
     src/main.cpp
     src/parser.cpp

@@ -4,7 +4,6 @@
 
 #include <string>
 #include "include/args_parser.hpp"
-#include "include/client.hpp"
 #include "include/parser.hpp"
 #include "include/socket.hpp"
 
@@ -12,16 +11,16 @@ namespace pkr {
 
 class Server {
 public:
-    enum : size_t { MAX_REQUEST_SIZE = FileDescriptor::MAX_REQUEST_SIZE };
+    enum : size_t { max_request_size = FileDescriptor::max_request_size };
 
 public:
     Server(const ServerConfig&);
     void start();
     void finish();
-    void do_get(Client&, const Message&);
+    void do_get(ClientSocket&, const Message&);
 
 private:
-    void interact_connection(Client&);
+    void interact_connection(ClientSocket&);
 
 private:
     ServerSocket server_socket;

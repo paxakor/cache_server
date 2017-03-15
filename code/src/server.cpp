@@ -14,7 +14,6 @@
 #include <iostream>
 #include <string>
 
-#include "include/client.hpp"
 #include "include/defs.hpp"
 #include "include/filesystem.hpp"
 #include "include/log.hpp"
@@ -33,9 +32,8 @@ Server::Server(const ServerConfig& cfg)
 void Server::start() {
     log.message("Server started");
     while (enabled) {
-        Client client(accept_client(server_socket));
+        auto client = accept_client(server_socket);
         DO_DEBUG(std::cout << "Connection established" << std::endl);
-        log.access(client.get_ip(), client.get_port());
         interact_connection(client);
     }
 }
@@ -45,18 +43,18 @@ void Server::finish() {
     enabled = false;
 }
 
-void Server::do_get(Client& client, const Message& msg) {
+void Server::do_get(ClientSocket& client, const Message& msg) {
     log.message(msg.url + " requested");
     std::string file_name = working_dir;
     file_name += (msg.url == "/" || msg.url == "") ? "index.html" : msg.url;
     std::ifstream file(file_name);
     if (!file) {
         log.message(file_name + " not found. 404");
-        client.write_failure(404, "Not Found");
+        write_failure(client, 404, "Not Found");
     } else {
         log.message(file_name + " opened");
-        client.write_response(200, fs::file_size(file_name));
-        char buffer[MAX_REQUEST_SIZE];
+        write_response(client, 200, fs::file_size(file_name));
+        char buffer[max_request_size];
         do {
             file.read(buffer, sizeof(buffer));
             const auto len = file.gcount();
@@ -67,7 +65,7 @@ void Server::do_get(Client& client, const Message& msg) {
     }
 }
 
-void Server::interact_connection(Client& client) {
+void Server::interact_connection(ClientSocket& client) {
     const auto request = read(client);
     const auto header = find_header(request);
     const auto msg = parse_header(header);
@@ -80,7 +78,7 @@ void Server::interact_connection(Client& client) {
             // do_post(client, cmd_arg);
             break;
         default:
-            client.write_failure(400, "Bad Request");
+            write_failure(client, 400, "Bad Request");
             log.message("invalid command");
             break;
     }

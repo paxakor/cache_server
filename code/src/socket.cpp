@@ -2,6 +2,7 @@
 
 #include <cerrno>
 #include <cstddef>
+#include <cstring>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -34,7 +35,7 @@ FileDescriptor::~FileDescriptor() {
     }
 }
 
-ssize_t FileDescriptor::read(char* dest, size_t nbyte) {
+ssize_t FileDescriptor::read(void* dest, size_t nbyte) {
     return ::read(handler, dest, nbyte);
 }
 
@@ -59,16 +60,12 @@ ssize_t write(FileDescriptor& fd, string_view buf) {
 Socket::Socket(int h)
     : FileDescriptor(h) {}
 
-sockaddr_in Socket::get_address() const {
-    return address;
-}
-
-sockaddr_in& Socket::mutable_address()  {
-    return address;
-}
+ClientSocket::ClientSocket(int h)
+    : Socket(h) {}
 
 ServerSocket::ServerSocket(Port port)
     : Socket(socket(AF_INET, SOCK_STREAM, 0)) {
+    sockaddr_in address;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
@@ -79,16 +76,33 @@ ServerSocket::ServerSocket(Port port)
 }
 
 ClientSocket accept_client(ServerSocket& serv_sock) {
-    ClientSocket client;
-    auto& client_address = client.mutable_address();
+    sockaddr_in client_address;
     socklen_t client_address_size = sizeof(client_address);
     const auto new_client_handler = ::accept(serv_sock.handler,
         reinterpret_cast<sockaddr*>(&client_address), &client_address_size);
     if (new_client_handler < 0) {
         die("Unable to accept: ");
     }
-    client.handler = new_client_handler;
-    return client;
+    char ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &client_address.sin_addr, ip, sizeof(ip));
+    log.access(ip, ntohs(client_address.sin_port));
+    return {new_client_handler};
+}
+
+ssize_t write_failure(ClientSocket& cls, int status, string_view msg) {
+    char headers[2048];
+    snprintf(headers, sizeof(headers), "HTTP/1.0 %d %s\r\n", status,
+        msg.data());
+    return write(cls, {headers, strlen(headers)});
+}
+
+ssize_t write_response(ClientSocket& cls, int status, size_t file_size) {
+    char headers[2048];
+    snprintf(headers, sizeof(headers),
+        "HTTP/1.0 %d OK\r\n"
+        "Content-Length: %lu\r\n"
+        "\r\n", status, file_size);
+    return write(cls, {headers, strlen(headers)});
 }
 
 }  // namespace pkr

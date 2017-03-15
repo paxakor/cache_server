@@ -12,39 +12,37 @@ namespace pkr {
 
 class FileDescriptor {
 public:
-    enum : size_t { MAX_REQUEST_SIZE = 65536 };
+    enum : size_t { max_request_size = 65536 };
 public:
     FileDescriptor(int);
     virtual ~FileDescriptor();
     FileDescriptor(const FileDescriptor&) = delete;
     FileDescriptor(FileDescriptor&&);
-    ssize_t read(char*, size_t);
+    ssize_t read(void*, size_t);
     ssize_t write(const void*, size_t);
 
 protected:
     int handler;
 };
 
-std::string read(FileDescriptor&, size_t);
+std::string read(FileDescriptor&, size_t = FileDescriptor::max_request_size);
 ssize_t write(FileDescriptor&, string_view);
 
 class Socket : public FileDescriptor {
 public:
     Socket(const Socket&) = delete;
     Socket(Socket&&) = default;
-    sockaddr_in get_address() const;
-    sockaddr_in& mutable_address();
 
 protected:
     Socket(int);
-
-protected:
-    sockaddr_in address;
 };
 
+
+class Epoll;
 class ClientSocket;
 class ServerSocket;
 ClientSocket accept_client(ServerSocket&);
+Epoll make_epoll(ServerSocket&);
 
 class ClientSocket : public Socket {
     friend ClientSocket accept_client(ServerSocket&);
@@ -52,19 +50,24 @@ class ClientSocket : public Socket {
 public:
     ClientSocket(const ClientSocket&) = delete;
     ClientSocket(ClientSocket&&) = default;
-    std::string read_header();
+    ssize_t write_failure(int, const std::string&);
+    ssize_t write_response(int, size_t);
 
 protected:
-    ClientSocket() : Socket(0) {}
+    ClientSocket(int);
 };
 
 class ServerSocket : public Socket {
     friend ClientSocket accept_client(ServerSocket&);
+    friend Epoll make_epoll(ServerSocket&);
 
 public:
     ServerSocket(const ServerSocket&) = delete;
     ServerSocket(ServerSocket&&) = default;
     ServerSocket(Port);
 };
+
+ssize_t write_failure(ClientSocket&, int, string_view);
+ssize_t write_response(ClientSocket&, int, size_t);
 
 }  // namespace pkr

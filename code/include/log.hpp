@@ -6,29 +6,22 @@
 #include <list>
 #include <queue>
 #include <string>
-#include "include/singleton.hpp"
+#include "include/defs.hpp"
 
 namespace pkr {
 
 class Logger {
-protected:
-    friend class Singleton<Logger>;
-    Logger() = default;
-
 public:
-    Logger(const Logger&) = delete;
-    Logger& operator=(const Logger&) = delete;
-
     ~Logger();
-
     void set_file(const std::string&);
+    void write_to_file();
 
-    void access(const std::string&, uint32_t);
+    void access(const std::string&, Port);
     void error(const std::string&);
     void fatal_error(const std::string&);
     void message(const std::string&);
 
-    void write_to_file();
+    static std::string errstr();
 
 private:
     void add_rec(const std::string&);
@@ -38,8 +31,6 @@ private:
     std::queue<std::string, std::list<std::string>> records;
 };
 
-extern Logger& log;
-
-void die(std::string);
+extern Logger log;
 
 }  // namespace pkr

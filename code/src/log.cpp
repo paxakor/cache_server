@@ -1,17 +1,13 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
-#include <cstdint>
-#include <cstdlib>
+#include <cerrno>
 #include <cstring>
 #include <ctime>
 #include <exception>
 #include <fstream>
 #include <iostream>
-#include <stdexcept>
 #include <string>
-#include <vector>
 #include "include/log.hpp"
-#include "include/filesystem.hpp"
 
 namespace pkr {
 
@@ -23,7 +19,7 @@ void Logger::set_file(const std::string& file_name) {
     log_file = file_name;
 }
 
-void Logger::access(const std::string& ip, uint32_t port) {
+void Logger::access(const std::string& ip, Port port) {
     add_rec(std::string("New client: ") + ip + ":" + std::to_string(port));
 }
 
@@ -62,11 +58,12 @@ void Logger::write_to_file() {
     }
 }
 
-Logger& log = Singleton<Logger>::get_inctance();
-
-void die(std::string msg) {
-    msg += std::strerror(errno);
-    log.error(msg);
+std::string Logger::errstr() {
+    char err[0x200];
+    strerror_r(errno, err, sizeof(err));
+    return {err};
 }
+
+Logger log;
 
 }  // namespace pkr

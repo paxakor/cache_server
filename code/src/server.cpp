@@ -1,40 +1,30 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
 #include <fstream>
 #include <iostream>
-#include <string>
 
 #include "include/defs.hpp"
 #include "include/filesystem.hpp"
 #include "include/log.hpp"
-#include "include/parser.hpp"
 #include "include/server.hpp"
-#include "include/socket.hpp"
 #include "include/utils.hpp"
 
 namespace pkr {
 
 Server::Server(const ServerConfig& cfg)
     : server_socket(make_server_socket(cfg.port))
+    , epoll(make_epoll(server_socket))
     , working_dir(cfg.working_dir)
     , enabled(true) { }
 
 void Server::start() {
     log.message("Server started");
     while (enabled) {
-        Socket client(accept_client(server_socket));
-        DO_DEBUG(std::cout << "Connection established" << std::endl);
-        interact_connection(client);
+        epoll.wait();
+        for (auto client : epoll) {
+            interact_connection(client);
+        }
+        epoll.accept_all();
     }
 }
 
@@ -43,7 +33,7 @@ void Server::finish() {
     enabled = false;
 }
 
-void Server::do_get(Socket& client, const Message& msg) {
+void Server::do_get(Socket& client, const Message& msg) const {
     log.message(msg.url + " requested");
     std::string file_name = working_dir;
     file_name += (msg.url == "/" || msg.url == "") ? "index.html" : msg.url;
@@ -65,11 +55,10 @@ void Server::do_get(Socket& client, const Message& msg) {
     }
 }
 
-void Server::interact_connection(Socket& client) {
+void Server::interact_connection(Socket& client) const {
     const auto request = read(client);
     const auto header = find_header(request);
     const auto msg = parse_header(header);
-    DO_DEBUG(std::cout << debug_header(msg) << std::endl);
     switch (msg.method) {
         case Method::GET:
             do_get(client, msg);

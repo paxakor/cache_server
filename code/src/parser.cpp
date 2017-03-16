@@ -34,16 +34,18 @@ void parse_first_line(string_view request, Message& msg) {
 Message parse_header(string_view header) {
     Message msg;
     const auto lines = split(header, "\r\n");
-    parse_first_line(lines[0], msg);
-    for (auto it = lines.begin() + 1; it != lines.end(); ++it) {
-        const auto parts = split_n(*it, 2, ':');
-        if (parts.size() != 2) {
-            if (it->size() != 0) {
-                log.message("invalid header line: " + *it);
+    if (lines.size() > 0) {
+        parse_first_line(lines[0], msg);
+        for (auto it = lines.begin() + 1; it != lines.end(); ++it) {
+            const auto parts = split_n(*it, 2, ':');
+            if (parts.size() != 2) {
+                if (it->size() != 0) {
+                    log.message("invalid header line: " + *it);
+                }
+                continue;
             }
-            continue;
+            msg.head[parts[0]] = strip(parts[1]);
         }
-        msg.head[parts[0]] = strip(parts[1]);
     }
     return msg;
 }

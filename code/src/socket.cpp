@@ -1,7 +1,6 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
 #include <cerrno>
-#include <cstddef>
 #include <cstring>
 #include <arpa/inet.h>
 #include <fcntl.h>
@@ -16,6 +15,18 @@
 #include "include/utils.hpp"
 
 namespace pkr {
+
+int set_nonblock(int fd) {
+    int flags = 1;
+#ifdef O_NONBLOCK
+    if ((flags = fcntl(fd, F_GETFL, 0)) == -1) {
+        flags = 0;
+    }
+    return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+#else
+    return ioctl(fd, FIOBIO, &flags);
+#endif
+}
 
 DescriptorRef::DescriptorRef(const FileDescriptor& fd)
     : Handler{fd.handler} {}
@@ -32,6 +43,8 @@ FileDescriptor::FileDescriptor(int h)
     : Handler{h} {
     if (handler < 0) {
         log.error("invalid fildes");
+    } else {
+        set_nonblock(handler);
     }
 }
 
@@ -51,22 +64,37 @@ FileDescriptor::~FileDescriptor() {
     }
 }
 
-ssize_t FileDescriptor::read(void* dest, size_t nbyte) {
-    return ::read(handler, dest, nbyte);
+ssize_t FileDescriptor::read(char* dest, ssize_t nbyte) {
+    ssize_t sz = 0;
+    ssize_t len;
+    do {
+        len = ::read(handler, dest + sz, nbyte - sz);
+        if (len > 0) {
+            sz += len;
+        }
+    } while (sz < nbyte && len > 0);
+    return sz;
 }
 
-ssize_t FileDescriptor::write(const void* buf, size_t nbyte) {
-    return ::write(handler, buf, nbyte);
+ssize_t FileDescriptor::write(const char* buf, ssize_t nbyte) {
+    ssize_t sz = 0;
+    ssize_t len;
+    do {
+        len = ::write(handler, buf + sz, nbyte - sz);
+        if (len > 0) {
+            sz += len;
+        }
+    } while (sz < nbyte && len > 0);
+    return sz;
 }
 
 std::string read(FileDescriptor& fd, size_t nbyte) {
-    std::string str(nbyte, 0);
-    const ssize_t len = fd.read(const_cast<char*>(str.data()), nbyte);
-    if (len < 0) {
-        return "";
+    std::vector<char> buf(nbyte);
+    const auto len = fd.read(buf.data(), nbyte);
+    if (len <= 0) {
+        log.message("can't read from socket");
     }
-    str.shrink_to_fit();
-    return str;
+    return {buf.data(), buf.data() + len};
 }
 
 ssize_t write(FileDescriptor& fd, string_view buf) {
@@ -76,12 +104,12 @@ ssize_t write(FileDescriptor& fd, string_view buf) {
 DescriptorHolder make_server_socket(Port port) {
     DescriptorHolder serv(socket(AF_INET, SOCK_STREAM, 0));
     sockaddr_in address;
-    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_addr.s_addr = htonl(INADDR_ANY);
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
     if (bind(serv.handler, reinterpret_cast<const sockaddr*>(&address),
         sizeof(address)) < 0 || listen(serv.handler, SOMAXCONN) < 0) {
-        die("Unable to create socket: ");
+        log.fatal_error("Unable to create server socket: " + Logger::errstr());
     }
     return serv;
 }
@@ -95,6 +123,8 @@ int accept_client_helper(int serv_sock_fd) {
         char ip[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &client_address.sin_addr, ip, sizeof(ip));
         log.access(ip, ntohs(client_address.sin_port));
+    } else {
+        log.error("accept failed: " + Logger::errstr());
     }
     return new_client_handler;
 }

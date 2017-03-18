@@ -4,6 +4,7 @@
 
 #include <sys/epoll.h>
 #include <array>
+#include <iterator>
 #include "include/socket.hpp"
 
 namespace pkr {
@@ -20,11 +21,14 @@ public:
 
     class iterator {
     public:
-        using event_iter = events_storage::iterator;
-        using pointer    = events_storage::pointer;
-        using value_type = events_storage::value_type;
+        using difference_type   = void;
+        using iterator_category = std::input_iterator_tag;
+        using pointer           = events_storage::pointer;
+        using reference         = events_storage::value_type&;
+        using value_type        = events_storage::value_type;
+        using event_iter        = events_storage::iterator;
 
-        iterator(const event_iter&, const event_iter&, int);
+        iterator(event_iter, Epoll&);
         bool operator!=(iterator);
         iterator operator++();
         Socket operator*();
@@ -32,18 +36,18 @@ public:
         void skip_serv_fd();
     private:
         event_iter iter;
-        const event_iter end;
-        const int server_fd;
+        Epoll& parent;
     };
 
     void accept_all();
-    void wait();
+    int wait();
     iterator begin();
     iterator end();
 
 private:
     Epoll(int);
     void add(int);
+    void add(int, uint32_t);
     iterator::event_iter events_begin();
     iterator::event_iter events_end();
     iterator make_iterator(iterator::event_iter);

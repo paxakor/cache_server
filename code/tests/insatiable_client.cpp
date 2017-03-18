@@ -37,14 +37,14 @@ const char* find_response_body(const File& buffer) {
         std::begin(pattern), std::begin(pattern) + strlen(pattern));
 }
 
-void send_request(const std::string* request, const File* file,
-                  const sockaddr_in* serv_addr) {
+void send_request(const std::string& request, const File file,
+                  const sockaddr_in& serv_addr) {
     const auto sockfd = socket(AF_INET, SOCK_STREAM, 0);
     passert(sockfd >= 0, "can't open socket");
-    passert(connect(sockfd, reinterpret_cast<const sockaddr*>(serv_addr),
-                    sizeof(*serv_addr)) >= 0, "can't connect");
-    passert(write(sockfd, request->c_str(), request->size()) ==
-            static_cast<ssize_t>(request->size()), "can't write");
+    passert(connect(sockfd, reinterpret_cast<const sockaddr*>(&serv_addr),
+                    sizeof(serv_addr)) >= 0, "can't connect");
+    passert(write(sockfd, request.c_str(), request.size()) ==
+            static_cast<ssize_t>(request.size()), "can't write");
     File buffer;
     ssize_t sz = 0;
     ssize_t len;
@@ -54,7 +54,7 @@ void send_request(const std::string* request, const File* file,
     close(sockfd);
     buffer[sz] = 0;
     const auto body = find_response_body(buffer);
-    passert(strncmp(*file, body, FILESZ) == 0, "files are not equal", false);
+    passert(strncmp(file, body, FILESZ) == 0, "files are not equal", false);
 }
 
 sockaddr_in make_serv_addr(const char* hostname, int portno) {
@@ -84,11 +84,20 @@ void readfile(const char* fname, File& file) {
     file[sz] = 0;
 }
 
-void test(int sessions, const std::string* request, const File* file,
-          const sockaddr_in* serv_addr) {
+template <typename Int, typename... Ts>
+void test(Int sessions, const Ts&... args) {
     for (int i = 0; i < sessions; ++i) {
-        send_request(request, file, serv_addr);
+        send_request(args...);
     }
+}
+
+template <typename... Ts>
+std::list<std::thread> make_threads(int thread_count, const Ts&... args) {
+    std::list<std::thread> threads;
+    for (int i = 0; i < thread_count; ++i) {
+        threads.emplace_back(test<Ts...>, std::cref(args)...);
+    }
+    return threads;
 }
 
 int main(int argc, char** argv) {
@@ -103,11 +112,8 @@ int main(int argc, char** argv) {
     const auto thread_count = atoi(argv[5]);
     File file;
     readfile(argv[3], file);
-    Stopwatch sw("DUDOS");
-    std::list<std::thread> threads;
-    for (int i = 0; i < thread_count; ++i) {
-        threads.emplace_back(test, sessions, &request, &file, &serv_addr);
-    }
+    Stopwatch sw("DDoS");
+    auto threads = make_threads(thread_count, sessions, request, file, serv_addr);
     for (auto& th : threads) {
         th.join();
     }

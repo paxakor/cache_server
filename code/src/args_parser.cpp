@@ -89,6 +89,8 @@ ServerConfig::ServerConfig(const std::string& file_name) {
             if (!(1000 < port && port < ((1 << 16) - 1))) {  // TODO
                 error("invalid port", line_number);
             }
+        } else if (parts[0] == "max_threads") {
+            max_threads = std::strtoul(parts[1].data(), NULL, 10);
         } else {
             error("no such option", line_number);
         }

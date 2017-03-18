@@ -40,6 +40,7 @@ private:
 public:
     Port port = 31337;
     std::string working_dir = "./";
+    size_t max_threads = 4;
 };
 
 }  // namespace pkr

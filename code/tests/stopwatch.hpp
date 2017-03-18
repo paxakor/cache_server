@@ -3,14 +3,15 @@
 #pragma once
 
 #include <ctime>
+
 #include <iostream>
 #include <string>
+#include <utility>
 
 class Stopwatch {
 public:
-    explicit Stopwatch(const std::string& new_name)
-    : name(new_name)
-    , start(clock()) {
+    explicit Stopwatch(std::string new_name)
+        : name(std::move(new_name)), start(clock()) {
         std::cout << "Start " << name << std::endl;
     }
 

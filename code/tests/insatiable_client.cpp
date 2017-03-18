@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <netdb.h> 
+#include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -15,6 +15,7 @@
 #include <iterator>
 #include <list>
 #include <thread>
+
 #include "stopwatch.hpp"
 
 enum { FILESZ = 4096 };
@@ -34,17 +35,21 @@ void passert(bool val, const char* msg, bool use_perror = true) {
 const char* find_response_body(const File& buffer) {
     static const char pattern[] = "\r\n\r\n";
     return strlen(pattern) + std::search(buffer, buffer + strlen(buffer),
-        std::begin(pattern), std::begin(pattern) + strlen(pattern));
+                                         std::begin(pattern),
+                                         std::begin(pattern) + strlen(pattern));
 }
 
-void send_request(const std::string& request, const File file,
+void send_request(const std::string& request,
+                  const File file,
                   const sockaddr_in& serv_addr) {
     const auto sockfd = socket(AF_INET, SOCK_STREAM, 0);
     passert(sockfd >= 0, "can't open socket");
     passert(connect(sockfd, reinterpret_cast<const sockaddr*>(&serv_addr),
-                    sizeof(serv_addr)) >= 0, "can't connect");
+                    sizeof(serv_addr)) >= 0,
+            "can't connect");
     passert(write(sockfd, request.c_str(), request.size()) ==
-            static_cast<ssize_t>(request.size()), "can't write");
+                static_cast<ssize_t>(request.size()),
+            "can't write");
     File buffer;
     ssize_t sz = 0;
     ssize_t len;
@@ -72,7 +77,7 @@ sockaddr_in make_serv_addr(const char* hostname, int portno) {
 }
 
 void readfile(const char* fname, File& file) {
-    FILE *fp = fopen(fname, "r");
+    FILE* fp = fopen(fname, "r");
     passert(fp, "can't open file");
     size_t sz = 0;
     size_t len;
@@ -102,18 +107,20 @@ std::list<std::thread> make_threads(int thread_count, const Ts&... args) {
 
 int main(int argc, char** argv) {
     if (argc < 4) {
-        fprintf(stderr, "usage: %s hostname port file sessions threads\n", argv[0]);
+        fprintf(stderr, "usage: %s hostname port file sessions threads\n",
+                argv[0]);
         return 1;
     }
-    const auto request = "GET / HTTP/1.0\r\nHost: " + std::string(argv[1]) +
-        "\r\n\r\n";
+    const auto request =
+        "GET / HTTP/1.0\r\nHost: " + std::string(argv[1]) + "\r\n\r\n";
     const auto serv_addr = make_serv_addr(argv[1], atoi(argv[2]));
     const auto sessions = atoi(argv[4]);
     const auto thread_count = atoi(argv[5]);
     File file;
     readfile(argv[3], file);
     Stopwatch sw("DDoS");
-    auto threads = make_threads(thread_count, sessions, request, file, serv_addr);
+    auto threads =
+        make_threads(thread_count, sessions, request, file, serv_addr);
     for (auto& th : threads) {
         th.join();
     }

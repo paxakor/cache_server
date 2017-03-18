@@ -3,11 +3,12 @@
 #include <cerrno>
 #include <cstring>
 #include <ctime>
+
 #include <exception>
 #include <fstream>
 #include <iostream>
 #include <mutex>
-#include <string>
+
 #include "include/log.hpp"
 
 namespace pkr {

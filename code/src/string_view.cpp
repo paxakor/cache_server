@@ -1,27 +1,28 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
 #include <cstring>
+
 #include <algorithm>
-#include <string>
 #include <utility>
+
 #include "include/string_view.hpp"
 
 namespace pkr {
 
 string_view::string_view(const std::string& s)
     : ptr(s.data())
-    , len(s.size()) { }
+    , len(s.size()) {}
 
 string_view::string_view(const_pointer p, string_view::size_type l)
     : ptr(p)
-    , len(l) { }
+    , len(l) {}
 
 string_view::string_view(const_pointer p)
     : ptr(p)
-    , len(strlen(p)) { }
+    , len(strlen(p)) {}
 
 string_view::string_view(const_iterator begin, const_iterator end)
-    : string_view(begin, static_cast<size_type>(end - begin)) { }
+    : string_view(begin, static_cast<size_type>(end - begin)) {}
 
 string_view::iterator string_view::begin() {
     return ptr;
@@ -55,8 +56,8 @@ string_view::const_reference string_view::front() const {
     return ptr[0];
 }
 
-string_view::const_reference string_view::operator[](
-    string_view::size_type pos) const {
+string_view::const_reference
+string_view::operator[](string_view::size_type pos) const {
     return ptr[pos];
 }
 
@@ -95,21 +96,22 @@ string_view::operator std::string() const {
 }
 
 string_view string_view::substr(string_view::size_type pos,
-    string_view::size_type cnt) const {
+                                string_view::size_type cnt) const {
     pos = std::min(pos, size());
     cnt = std::min(cnt, size() - pos);
     return {ptr + pos, cnt};
 }
 
 string_view::size_type string_view::copy(pointer dest,
-    string_view::size_type cnt, string_view::size_type pos) const {
+                                         string_view::size_type cnt,
+                                         string_view::size_type pos) const {
     cnt = std::min(cnt, size() - pos);
     strncpy(dest, ptr + pos, cnt);
     return cnt;
 }
 
 string_view::size_type string_view::find(string_view sv,
-    string_view::size_type pos) const {
+                                         string_view::size_type pos) const {
     for (size_type i = pos; i + sv.len <= len; ++i) {
         if (string_view(ptr + i, sv.size()) == sv) {
             return i;
@@ -134,7 +136,7 @@ bool operator!=(string_view lhs, string_view rhs) {
     return !(lhs == rhs);
 }
 
-bool operator< (string_view lhs, string_view rhs) {
+bool operator<(string_view lhs, string_view rhs) {
     for (size_t i = 0; i < lhs.size() && i < rhs.size(); ++i) {
         if (lhs[i] != rhs[i]) {
             return lhs[i] < rhs[i];
@@ -152,7 +154,7 @@ bool operator<=(string_view lhs, string_view rhs) {
     return lhs.size() <= rhs.size();
 }
 
-bool operator> (string_view lhs, string_view rhs) {
+bool operator>(string_view lhs, string_view rhs) {
     return !(lhs <= rhs);
 }
 

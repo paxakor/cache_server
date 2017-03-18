@@ -1,9 +1,8 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
-#include <cstring>
-#include <algorithm>
-#include <iostream>
 #include <iterator>
+#include <utility>
+
 #include "include/epoll.hpp"
 #include "include/log.hpp"
 
@@ -79,7 +78,8 @@ Epoll::iterator Epoll::make_iterator(Epoll::iterator::event_iter ei) {
 
 
 Epoll::iterator::iterator(event_iter pos, Epoll& par)
-    : iter(std::move(pos)), parent(par) {
+    : iter(std::move(pos))
+    , parent(par) {
     skip_serv_fd();
 }
 

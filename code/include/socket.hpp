@@ -3,16 +3,17 @@
 #pragma once
 
 #include <cstddef>
+
 #include <sys/epoll.h>
+
 #include <string>
+
 #include "include/defs.hpp"
 #include "include/string_view.hpp"
 
 namespace pkr {
 
 struct Handler {
-    Handler(int h) : handler(h) {}
-protected:
     int handler;
 };
 
@@ -21,28 +22,33 @@ class DescriptorHolder;
 class FileDescriptor;
 class Epoll;
 
-class DescriptorRef : public Handler {
+class DescriptorRef : private Handler {
     friend DescriptorHolder accept_client(DescriptorRef);
     friend Epoll make_epoll(DescriptorRef);
+
 public:
     DescriptorRef(const FileDescriptor&);
 };
 
-class DescriptorHolder : public Handler {
+class DescriptorHolder : private Handler {
     friend class FileDescriptor;
     friend DescriptorHolder accept_client(DescriptorRef);
     friend DescriptorHolder make_server_socket(Port);
     friend DescriptorHolder make_event_socket(epoll_event);
+
 public:
     DescriptorHolder(DescriptorHolder&&);
+
 protected:
     DescriptorHolder(int);
 };
 
-class FileDescriptor : public Handler {
+class FileDescriptor : private Handler {
     friend class DescriptorRef;
+
 public:
     enum : size_t { max_request_size = 65536 };
+
 public:
     virtual ~FileDescriptor();
     FileDescriptor(const FileDescriptor&) = delete;
@@ -50,6 +56,7 @@ public:
     FileDescriptor(DescriptorHolder&&);
     ssize_t read(char*, ssize_t);
     ssize_t write(const char*, ssize_t);
+
 protected:
     FileDescriptor(int);
 };

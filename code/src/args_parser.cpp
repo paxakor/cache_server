@@ -1,11 +1,11 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
 #include <cstdlib>
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <string>
-#include <vector>
+
 #include "include/args_parser.hpp"
 #include "include/defs.hpp"
 #include "include/filesystem.hpp"
@@ -15,7 +15,7 @@
 namespace pkr {
 
 ArgList::ArgList(int argc, char** argv)
-    : args(argv, argv + argc) { }
+    : args(argv, argv + argc) {}
 
 bool ArgList::check_flag(const std::string& flag) const {
     return std::find(args.begin(), args.end(), flag) != args.end();
@@ -39,10 +39,10 @@ std::string ArgList::get_arg(const int n) const {
 
 ServerArgs::ServerArgs(int argc, char** argv)
     : list(argc, argv) {
-        if (list.check_flag("-h") || list.check_flag("--help")) {
-            print_usage();
-        }
+    if (list.check_flag("-h") || list.check_flag("--help")) {
+        print_usage();
     }
+}
 
 std::string ServerArgs::config_file() const {
     const auto arg_id = list.value_id("-c");
@@ -65,7 +65,6 @@ void ServerArgs::print_usage() const {
     std::exit(0);
 }
 
-
 ServerConfig::ServerConfig(const std::string& file_name) {
     std::ifstream cfg_file(file_name);
     std::string line;
@@ -86,7 +85,7 @@ ServerConfig::ServerConfig(const std::string& file_name) {
             }
         } else if (parts[0] == "port") {
             port = std::strtoul(parts[1].data(), NULL, 10);
-            if (!(1000 < port && port < ((1 << 16) - 1))) {  // TODO
+            if (!(1000 < port && port < ((1 << 16) - 1))) {
                 error("invalid port", line_number);
             }
         } else if (parts[0] == "max_threads") {
@@ -98,8 +97,8 @@ ServerConfig::ServerConfig(const std::string& file_name) {
 }
 
 void ServerConfig::error(const std::string& msg, size_t nline) {
-    log.fatal_error("Invalid config line " +
-        std::to_string(nline) + ": " + msg + ".");
+    log.fatal_error("Invalid config line " + std::to_string(nline) + ": " +
+                    msg + ".");
 }
 
 }  // namespace pkr

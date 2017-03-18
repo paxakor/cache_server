@@ -1,6 +1,7 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
-#include <signal.h>
+#include <csignal>
+
 #include "include/signal.hpp"
 
 namespace pkr {
@@ -8,7 +9,7 @@ namespace pkr {
 Server* SignalHandler::srv = nullptr;
 
 SignalHandler::SignalHandler() {
-    signal(SIGINT,  finish);
+    signal(SIGINT, finish);
     signal(SIGTERM, finish);
 }
 

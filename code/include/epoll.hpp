@@ -3,8 +3,10 @@
 #pragma once
 
 #include <sys/epoll.h>
+
 #include <array>
 #include <iterator>
+
 #include "include/socket.hpp"
 
 namespace pkr {
@@ -17,8 +19,8 @@ class Epoll {
     friend Epoll make_epoll(DescriptorRef);
     enum : size_t { max_events = 32 };
     using events_storage = std::array<epoll_event, max_events>;
-public:
 
+public:
     class iterator {
     public:
         using difference_type   = void;
@@ -32,8 +34,10 @@ public:
         bool operator!=(iterator);
         iterator operator++();
         Socket operator*();
+
     private:
         void skip_serv_fd();
+
     private:
         event_iter iter;
         Epoll& parent;

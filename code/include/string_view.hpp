@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cstddef>
+
 #include <string>
 
 namespace pkr {
@@ -19,6 +21,7 @@ public:
 
     string_view() = default;
     string_view(const string_view&) = default;
+    string_view(string_view&&) = default;
     string_view& operator=(const string_view& view) = default;
     string_view(const std::string&);
     string_view(const_pointer, size_type);

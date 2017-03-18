@@ -1,17 +1,20 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
-#include <cerrno>
+#include <cstdio>
 #include <cstring>
+
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
 #include <algorithm>
 #include <memory>
-#include <string>
+#include <utility>
+#include <vector>
+
 #include "include/log.hpp"
 #include "include/socket.hpp"
-#include "include/string_view.hpp"
 #include "include/utils.hpp"
 
 namespace pkr {
@@ -108,18 +111,19 @@ DescriptorHolder make_server_socket(Port port) {
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
     auto try_bind = [&address, &serv] {
-        return bind(serv.handler,
-            reinterpret_cast<const sockaddr*>(&address), sizeof(address)) == 0;
+        return bind(serv.handler, reinterpret_cast<const sockaddr*>(&address),
+                    sizeof(address)) == 0;
     };
     enum { tries = 8 };
     for (int i = 0; i < tries && !try_bind(); ++i) {
         log.message("Unable to create server socket on port " +
-            std::to_string(port) + " (bind failed): " + Logger::errstr());
+                    std::to_string(port) + " (bind failed): " +
+                    Logger::errstr());
         address.sin_port = htons(++port);
     }
     if (listen(serv.handler, SOMAXCONN) < 0) {
         log.fatal_error("Unable to create server socket (listen failed): " +
-            Logger::errstr());
+                        Logger::errstr());
     } else {
         log.print("Server socket was bound to port " + std::to_string(port));
     }
@@ -129,8 +133,9 @@ DescriptorHolder make_server_socket(Port port) {
 int accept_client_helper(int serv_sock_fd) {
     sockaddr_in client_address;
     socklen_t client_address_size = sizeof(client_address);
-    const auto new_client_handler = ::accept(serv_sock_fd,
-        reinterpret_cast<sockaddr*>(&client_address), &client_address_size);
+    const auto new_client_handler =
+        ::accept(serv_sock_fd, reinterpret_cast<sockaddr*>(&client_address),
+                 &client_address_size);
     if (new_client_handler >= 0) {
         char ip[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &client_address.sin_addr, ip, sizeof(ip));
@@ -146,16 +151,17 @@ DescriptorHolder accept_client(DescriptorRef serv_sock) {
 ssize_t write_failure(Socket& cls, int status, string_view msg) {
     char headers[256];
     snprintf(headers, sizeof(headers), "HTTP/1.0 %d %s\r\n", status,
-        msg.to_string().c_str());
+             msg.to_string().c_str());
     return write(cls, {headers, strlen(headers)});
 }
 
 ssize_t write_response(Socket& cls, int status, size_t file_size) {
     char headers[256];
     snprintf(headers, sizeof(headers),
-        "HTTP/1.0 %d OK\r\n"
-        "Content-Length: %lu\r\n"
-        "\r\n", status, file_size);
+             "HTTP/1.0 %d OK\r\n"
+             "Content-Length: %lu\r\n"
+             "\r\n",
+             status, file_size);
     return write(cls, {headers, strlen(headers)});
 }
 

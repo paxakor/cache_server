@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+
 #include "include/defs.hpp"
 
 namespace pkr {
@@ -34,6 +35,7 @@ private:
 class ServerConfig {
 public:
     ServerConfig(const std::string&);
+
 private:
     void error(const std::string&, size_t);
 

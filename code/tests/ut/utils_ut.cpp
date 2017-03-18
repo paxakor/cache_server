@@ -1,6 +1,8 @@
 #include <cstring>
+
 #include <iostream>
 #include <iterator>
+
 #include "include/utils.hpp"
 
 int test_pattern() {
@@ -24,7 +26,7 @@ int test_space() {
     return 0;
 }
 
-int main(int argc, const char **argv) {
+int main(int argc, const char** argv) {
     if (argc < 2) {
     } else if (strcmp(argv[1], "pattern") == 0) {
         return test_pattern();

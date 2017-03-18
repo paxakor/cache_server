@@ -1,9 +1,9 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
 #include "include/args_parser.hpp"
-#include "include/signal.hpp"
 #include "include/log.hpp"
 #include "include/server.hpp"
+#include "include/signal.hpp"
 
 using namespace pkr;
 

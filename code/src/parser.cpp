@@ -2,8 +2,8 @@
 
 #include <algorithm>
 #include <iterator>
-#include <string>
 #include <vector>
+
 #include "include/log.hpp"
 #include "include/parser.hpp"
 #include "include/string_view.hpp"
@@ -76,7 +76,7 @@ std::string debug_header(const Message& msg) {
 string_view find_header(string_view request) {
     constexpr char delim[] = "\r\n";
     return {request.begin(), std::search(request.begin(), request.end(),
-        std::begin(delim), std::end(delim))};
+                                         std::begin(delim), std::end(delim))};
 }
 
 }  // namespace pkr

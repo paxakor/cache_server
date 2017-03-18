@@ -1,9 +1,6 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
 #include <fstream>
-#include <list>
-#include <thread>
-#include <vector>
 
 #include "include/defs.hpp"
 #include "include/filesystem.hpp"
@@ -18,8 +15,7 @@ Server::Server(const ServerConfig& cfg)
     , working_dir(cfg.working_dir)
     , server_socket(make_server_socket(cfg.port))
     , epoll(make_epoll(server_socket))
-    , helpers(max_threads, *this)
-{
+    , helpers(max_threads, *this) {
     for (auto& helper : helpers) {
         threads.emplace_back([&helper] { helper.start(); });
     }

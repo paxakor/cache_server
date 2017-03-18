@@ -1,21 +1,21 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
-#include <cctype>
 #include <cassert>
+#include <cctype>
+
 #include <algorithm>
 #include <iterator>
 #include <limits>
-#include <vector>
+
 #include "include/defs.hpp"
-#include "include/string_view.hpp"
 #include "include/utils.hpp"
 
 namespace pkr {
 namespace detail {
 
 template <typename Searcher, typename Advancer>
-std::vector<string_view::iterator> find_all(string_view str, size_t n,
-                                            Searcher search, Advancer advance) {
+std::vector<string_view::iterator>
+find_all(string_view str, size_t n, Searcher search, Advancer advance) {
     std::vector<string_view::iterator> ret;
     string_view::iterator pos = str.begin();
     string_view::iterator offset;
@@ -27,9 +27,9 @@ std::vector<string_view::iterator> find_all(string_view str, size_t n,
 }
 
 template <typename Searcher, typename Advancer>
-std::vector<string_view> split_helper(string_view str, size_t n,
-                                      Searcher search, Advancer advance) {
-    auto delims = find_all(str, n - 1, search, advance);   // assume n > 1
+std::vector<string_view>
+split_helper(string_view str, size_t n, Searcher search, Advancer advance) {
+    auto delims = find_all(str, n - 1, search, advance);  // assume n > 1
     delims.push_back(str.end());
     std::vector<string_view> res;
     auto pos = str.begin();
@@ -48,14 +48,12 @@ std::vector<string_view> split_helper(string_view str, size_t n,
 }
 
 template <typename Delimiter>
-std::vector<string_view> split_by_char(string_view str, size_t n,
-                                       Delimiter is_delim) {
+std::vector<string_view>
+split_by_char(string_view str, size_t n, Delimiter is_delim) {
     auto search = [is_delim](string_view& str, string_view::iterator pos) {
         return std::find_if(pos, str.end(), is_delim);
     };
-    auto advance = [](string_view::iterator pos) {
-        return ++pos;
-    };
+    auto advance = [](string_view::iterator pos) { return ++pos; };
     return split_helper(str, n, search, advance);
 }
 
@@ -74,16 +72,12 @@ std::vector<string_view> split(string_view str, string_view delim) {
 }
 
 std::vector<string_view> split_n(string_view str, size_t n) {
-    auto is_delim = [](const char ch) {
-        return std::isspace(ch);
-    };
+    auto is_delim = [](const char ch) { return std::isspace(ch); };
     return detail::split_by_char(str, n, is_delim);
 }
 
 std::vector<string_view> split_n(string_view str, size_t n, char delim) {
-    auto is_delim = [delim](const char ch) {
-        return ch == delim;
-    };
+    auto is_delim = [delim](const char ch) { return ch == delim; };
     return detail::split_by_char(str, n, is_delim);
 }
 

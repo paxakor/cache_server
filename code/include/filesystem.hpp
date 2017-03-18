@@ -7,12 +7,12 @@
     namespace fs = boost::filesystem;
 #else
     #ifdef USE_EXPSTL_FILESYSTEM
-        #include <experimental/filesystem>
-        namespace fs = std::experimental::filesystem;
+    #include <experimental/filesystem>
+    namespace fs = std::experimental::filesystem;
 #else
     #ifdef USE_STL_FILESYSTEM
-        #include <filesystem>
-        namespace fs = std::filesystem;
+    #include <filesystem>
+    namespace fs = std::filesystem;
 #else
 
 #include <cstdint>

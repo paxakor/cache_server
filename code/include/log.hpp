@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <cstdint>
 #include <list>
 #include <queue>
 #include <string>
+
 #include "include/defs.hpp"
 
 namespace pkr {

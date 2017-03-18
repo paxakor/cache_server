@@ -14,6 +14,8 @@
 
 namespace pkr {
 
+class ServerThread;
+
 class Server {
 public:
     enum : size_t { max_request_size = FileDescriptor::max_request_size };

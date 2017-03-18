@@ -159,7 +159,7 @@ ssize_t write_response(Socket& cls, int status, size_t file_size) {
     char headers[256];
     snprintf(headers, sizeof(headers),
              "HTTP/1.0 %d OK\r\n"
-             "Content-Length: %lu\r\n"
+             "Content-Length: %zu\r\n"
              "\r\n",
              status, file_size);
     return write(cls, {headers, strlen(headers)});

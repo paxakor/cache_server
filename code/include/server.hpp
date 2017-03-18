@@ -5,7 +5,9 @@
 #include <condition_variable>
 #include <list>
 #include <mutex>
+#include <string>
 #include <thread>
+#include <vector>
 
 #include "include/args_parser.hpp"
 #include "include/epoll.hpp"

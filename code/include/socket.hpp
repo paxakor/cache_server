@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <cstddef>
-
 #include <sys/epoll.h>
+
+#include <cstddef>
 
 #include <string>
 

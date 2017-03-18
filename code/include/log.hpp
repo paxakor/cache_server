@@ -20,6 +20,7 @@ public:
     void error(const std::string&);
     void fatal_error(const std::string&);
     void message(const std::string&);
+    void print(const std::string&);
 
     static std::string errstr();
 

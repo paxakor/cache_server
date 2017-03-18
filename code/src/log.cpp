@@ -6,6 +6,7 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <string>
 #include "include/log.hpp"
 
@@ -27,13 +28,12 @@ void Logger::error(const std::string& msg) {
     static const std::string prefix = "Error: ";
     add_rec(prefix + msg);
     write_to_file();
-    throw std::runtime_error(msg);
 }
 
 void Logger::fatal_error(const std::string& msg) {
     std::cerr << "Error occured. See log file for details. Exit." << std::endl;
     error(msg);
-    std::exit(1);
+    throw std::runtime_error(msg);
 }
 
 void Logger::message(const std::string& msg) {
@@ -41,12 +41,19 @@ void Logger::message(const std::string& msg) {
     add_rec(prefix + msg);
 }
 
+void Logger::print(const std::string& msg) {
+    std::cout << msg << std::endl;
+    message(msg);
+}
+
 void Logger::add_rec(const std::string& msg) {
-    std::string rec = std::to_string(std::time(nullptr)) + " " + msg;
-    records.push(std::move(rec));
+    static std::mutex mt;
+    mt.lock();
+    records.push(std::to_string(std::time(nullptr)) + " " + msg);
     if (records.size() > 0x4000) {
         write_to_file();
     }
+    mt.unlock();
 }
 
 void Logger::write_to_file() {
@@ -59,9 +66,7 @@ void Logger::write_to_file() {
 }
 
 std::string Logger::errstr() {
-    char err[0x200];
-    strerror_r(errno, err, sizeof(err));
-    return {err};
+    return {strerror(errno)};
 }
 
 Logger log;

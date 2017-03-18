@@ -42,7 +42,7 @@ DescriptorHolder::DescriptorHolder(int h)
 FileDescriptor::FileDescriptor(int h)
     : Handler{h} {
     if (handler < 0) {
-        log.error("invalid fildes");
+        log.error("Invalid fildes");
     } else {
         set_nonblock(handler);
     }
@@ -92,7 +92,7 @@ std::string read(FileDescriptor& fd, size_t nbyte) {
     std::vector<char> buf(nbyte);
     const auto len = fd.read(buf.data(), nbyte);
     if (len <= 0) {
-        log.message("can't read from socket");
+        log.message("Unable to read from socket");
     }
     return {buf.data(), buf.data() + len};
 }
@@ -107,9 +107,21 @@ DescriptorHolder make_server_socket(Port port) {
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
-    if (bind(serv.handler, reinterpret_cast<const sockaddr*>(&address),
-        sizeof(address)) < 0 || listen(serv.handler, SOMAXCONN) < 0) {
-        log.fatal_error("Unable to create server socket: " + Logger::errstr());
+    auto try_bind = [&address, &serv] {
+        return bind(serv.handler,
+            reinterpret_cast<const sockaddr*>(&address), sizeof(address)) == 0;
+    };
+    enum { tries = 8 };
+    for (int i = 0; i < tries && !try_bind(); ++i) {
+        log.message("Unable to create server socket on port " +
+            std::to_string(port) + " (bind failed): " + Logger::errstr());
+        address.sin_port = htons(++port);
+    }
+    if (listen(serv.handler, SOMAXCONN) < 0) {
+        log.fatal_error("Unable to create server socket (listen failed): " +
+            Logger::errstr());
+    } else {
+        log.print("Server socket was bound to port " + std::to_string(port));
     }
     return serv;
 }
@@ -123,8 +135,6 @@ int accept_client_helper(int serv_sock_fd) {
         char ip[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &client_address.sin_addr, ip, sizeof(ip));
         log.access(ip, ntohs(client_address.sin_port));
-    } else {
-        log.error("accept failed: " + Logger::errstr());
     }
     return new_client_handler;
 }

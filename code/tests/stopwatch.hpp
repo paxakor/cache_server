@@ -11,7 +11,8 @@
 class Stopwatch {
 public:
     explicit Stopwatch(std::string new_name)
-        : name(std::move(new_name)), start(clock()) {
+        : name(std::move(new_name))
+        , start(clock()) {
         std::cout << "Start " << name << std::endl;
     }
 

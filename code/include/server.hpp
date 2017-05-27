@@ -25,10 +25,9 @@ public:
     ~Server();
     void start();
     void finish();
-    void do_get(Socket&, const Message&) const;
-    void forward(Socket&, const Message&) const;
-    void serve(Socket&) const;
     void share_clients(ServerThread&);
+    static std::string forward(const Message&);
+    static void serve(Socket&);
 
 public:
     volatile bool enabled = true;

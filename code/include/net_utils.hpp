@@ -10,10 +10,11 @@
 
 #include "include/parser.hpp"
 #include "include/socket.hpp"
+#include "include/string_view.hpp"
 
 namespace pkr {
 
-std::shared_ptr<addrinfo> make_serv_addr(const std::string&);
+std::shared_ptr<addrinfo> make_serv_addr(string_view, string_view);
 Socket connect_to_server(std::shared_ptr<addrinfo>);
 
 }  // namespace pkr

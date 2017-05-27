@@ -13,8 +13,8 @@
 
 namespace pkr {
 
-std::shared_ptr<addrinfo> make_serv_addr(const std::string& host,
-                                         const std::string& service) {
+std::shared_ptr<addrinfo> make_serv_addr(string_view host,
+                                         string_view service) {
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
@@ -23,11 +23,11 @@ std::shared_ptr<addrinfo> make_serv_addr(const std::string& host,
     hints.ai_protocol = 0;
 
     struct addrinfo* result = nullptr;
-    auto err_code = getaddrinfo(host.c_str(), service.c_str(), &hints, &result);
+    auto err_code = getaddrinfo(host.data(), service.data(), &hints, &result);
     if (err_code != 0) {
         char err_msg[256];
         snprintf(err_msg, sizeof(err_msg), "Unable to find addrinfo for %s: %s",
-                 host.c_str(), gai_strerror(err_code));
+                 host.data(), gai_strerror(err_code));
         log.error(err_msg);
         return nullptr;
     }

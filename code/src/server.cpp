@@ -45,28 +45,23 @@ void Server::finish() {
     }
 }
 
-void Server::do_get(Socket& client, const Message& msg) const {
-    log.message(msg.url + " at " + msg.head.at("Host") + " requested");
-    forward(client, msg);
-}
-
-bool Server::forward(Socket& client, const Message& msg) const {
+std::string Server::forward(const Message& msg) {
     log.message("Forwarding to " + msg.head.at("Host"));
     const auto& host = msg.head.at("Host");
     auto host_sock = connect_to_server(make_serv_addr(host, msg.service));
     if (!host_sock.valid()) {
         log.error("Unable to download from " + host + " (connect failed)");
-        return;
+        return "";
     }
     const auto req = join_message(msg);
     if (write(host_sock, req) != static_cast<ssize_t>(req.size())) {
         log.error("Unable to send request to " + host);
-        return;
+        return "";
     }
     return read(host_sock);
 }
 
-void Server::serve(Socket& client) const {
+void Server::serve(Socket& client) {
     const auto request = read(client);
     Message msg(request);
 
@@ -81,7 +76,8 @@ void Server::serve(Socket& client) const {
             }
         }
     }
-    if (!forward(client, msg)) {
+    const auto response = forward(msg);
+    if (response.empty()) {
         write_failure(client, 500, "Internal Server Error");
     } else {
         write(client, response);

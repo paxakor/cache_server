@@ -11,6 +11,7 @@
 
 #include "include/args_parser.hpp"
 #include "include/epoll.hpp"
+#include "include/net_utils.hpp"
 #include "include/parser.hpp"
 #include "include/socket.hpp"
 
@@ -20,19 +21,17 @@ class ServerThread;
 
 class Server {
 public:
-    enum : size_t { max_request_size = FileDescriptor::max_request_size };
-
-public:
     Server(const ServerConfig&);
     ~Server();
     void start();
     void finish();
     void do_get(Socket&, const Message&) const;
+    void forward(Socket&, const Message&) const;
     void serve(Socket&) const;
     void share_clients(ServerThread&);
 
 public:
-    bool enabled = true;
+    volatile bool enabled = true;
     const size_t max_threads;
     const std::string working_dir;
     Socket server_socket;

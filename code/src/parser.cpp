@@ -6,16 +6,15 @@
 
 #include "include/log.hpp"
 #include "include/parser.hpp"
-#include "include/string_view.hpp"
 #include "include/utils.hpp"
 
 namespace pkr {
 
-void parse_first_line(string_view request, Message& msg) {
-    const auto args = split(request);
+void parse_first_line(string_view line, Message& msg) {
+    const auto args = split(line);
     if (args.size() < 3) {
-        if (request.size() <= 80) {
-            log.message("invalid request line: \n" + request + "\n");
+        if (line.size() <= 80) {
+            log.message("invalid request line: \n" + line + "\n");
         } else {
             log.message("invalid request line (too long to show)");
         }
@@ -31,39 +30,67 @@ void parse_first_line(string_view request, Message& msg) {
     msg.url = args[1];
 }
 
-Message parse_header(string_view header) {
-    Message msg;
+void parse_header(string_view header, Message& msg) {
     const auto lines = split(header, "\r\n");
-    if (lines.size() > 0) {
-        parse_first_line(lines[0], msg);
-        for (auto it = lines.begin() + 1; it != lines.end(); ++it) {
-            const auto parts = split_n(*it, 2, ':');
-            if (parts.size() != 2) {
-                if (it->size() != 0) {
-                    log.message("invalid header line: " + *it);
-                }
-                continue;
-            }
+    if (lines.size() == 0) {
+        log.error("empty header");
+        return;
+    }
+    parse_first_line(lines[0], msg);
+    for (auto it = lines.begin() + 1; it != lines.end() && it->size(); ++it) {
+        const auto parts = split_n(*it, 2, ':');
+        if (parts.size() == 2) {
             msg.head[parts[0]] = strip(parts[1]);
         }
     }
-    return msg;
+    const auto host_pos = msg.head.find("Host");
+    if (host_pos == msg.head.end()) {
+        msg.method = Method::UNKNOWN;
+        return;
+    }
+    auto& host = host_pos->second;
+    {
+        const auto pos = std::search(msg.url.begin(), msg.url.end(),
+                                     host.begin(), host.end());
+        if (pos != msg.url.end()) {
+            msg.url = string_view(pos + host.size(), msg.url.end());
+        }
+    }
+    {
+        const auto pos = std::find(host.begin(), host.end(), ':');
+        if (pos != host.end()) {
+            msg.service = std::string(pos + 1, host.end());
+            host = std::string(host.begin(), pos);
+        }
+    }
 }
 
-std::string debug_header(const Message& msg) {
+Message::Message(string_view req) {
+    static const string_view delim("\r\n\r\n");
+    auto pos = std::search(req.begin(), req.end(), delim.begin(), delim.end());
+    parse_header({req.begin(), pos}, *this);
+    body = pos == req.end() ? "" : string_view{pos + delim.size(), req.end()};
+}
+
+std::string join_first_line(const Message& msg) {
+    std::string line;
+    if (msg.method == Method::GET) {
+        line += "GET ";
+    } else if (msg.method == Method::HEAD) {
+        line += "HEAD ";
+    } else if (msg.method == Method::POST) {
+        line += "POST ";
+    } else {
+        line += "UNKNOWN ";
+    }
+    line += msg.url;
+    line += " HTTP/" + msg.version + "\r\n";
+    return line;
+}
+
+std::string join_header(const Message& msg) {
     std::string header;
     header.reserve(2048);
-    if (msg.method == Method::GET) {
-        header += "GET ";
-    } else if (msg.method == Method::HEAD) {
-        header += "HEAD ";
-    } else if (msg.method == Method::POST) {
-        header += "POST ";
-    } else {
-        header += "UNKNOWN ";
-    }
-    header += msg.url;
-    header += " HTTP/xxx\r\n";
     for (const auto& param : msg.head) {
         header += param.first;
         header += ": ";
@@ -73,10 +100,8 @@ std::string debug_header(const Message& msg) {
     return header;
 }
 
-string_view find_header(string_view request) {
-    constexpr char delim[] = "\r\n";
-    return {request.begin(), std::search(request.begin(), request.end(),
-                                         std::begin(delim), std::end(delim))};
+std::string join_message(const Message& msg) {
+    return join_first_line(msg) + join_header(msg) + "\r\n" + msg.body;
 }
 
 }  // namespace pkr

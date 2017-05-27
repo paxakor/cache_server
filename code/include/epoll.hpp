@@ -11,24 +11,21 @@
 
 namespace pkr {
 
-class Epoll;
-Epoll make_epoll(DescriptorRef);
-DescriptorHolder make_event_socket(epoll_event ee);
-
 class Epoll {
-    friend Epoll make_epoll(DescriptorRef);
     enum : size_t { max_events = 32 };
     using events_storage = std::array<epoll_event, max_events>;
 
 public:
     class iterator {
     public:
+        // clang-format off
         using difference_type   = void;
         using iterator_category = std::input_iterator_tag;
         using pointer           = events_storage::pointer;
         using reference         = events_storage::value_type&;
         using value_type        = events_storage::value_type;
         using event_iter        = events_storage::iterator;
+        // clang-format on
 
         iterator(event_iter, Epoll&);
         bool operator!=(iterator);
@@ -43,15 +40,16 @@ public:
         Epoll& parent;
     };
 
+public:
+    Epoll(Socket&);
+    ~Epoll();
     void accept_all();
     int wait();
     iterator begin();
     iterator end();
 
 private:
-    Epoll(int);
-    void add(int);
-    void add(int, uint32_t);
+    void add(Socket&, uint32_t = EPOLLIN | EPOLLONESHOT);
     iterator::event_iter events_begin();
     iterator::event_iter events_end();
     iterator make_iterator(iterator::event_iter);
@@ -59,8 +57,10 @@ private:
 private:
     events_storage events;
     const int epoll_fd;
-    const int server_fd;
+    Socket& server_fd;
     int valid_count;
 };
+
+Socket make_event_socket(epoll_event);
 
 }  // namespace pkr

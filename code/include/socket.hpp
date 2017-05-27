@@ -13,65 +13,38 @@
 
 namespace pkr {
 
-struct Handler {
-    int handler;
-};
-
-class DescriptorRef;
-class DescriptorHolder;
-class FileDescriptor;
-class Epoll;
-
-class DescriptorRef : private Handler {
-    friend DescriptorHolder accept_client(DescriptorRef);
-    friend Epoll make_epoll(DescriptorRef);
-
+class FileDescriptor {
 public:
-    DescriptorRef(const FileDescriptor&);
-};
-
-class DescriptorHolder : private Handler {
-    friend class FileDescriptor;
-    friend DescriptorHolder accept_client(DescriptorRef);
-    friend DescriptorHolder make_server_socket(Port);
-    friend DescriptorHolder make_event_socket(epoll_event);
-
-public:
-    DescriptorHolder(DescriptorHolder&&);
-
-protected:
-    DescriptorHolder(int);
-};
-
-class FileDescriptor : private Handler {
-    friend class DescriptorRef;
-
-public:
+    using handler_type = int;
     enum : size_t { max_request_size = 65536 };
 
 public:
-    virtual ~FileDescriptor();
+    explicit FileDescriptor(int = -1);
     FileDescriptor(const FileDescriptor&) = delete;
     FileDescriptor(FileDescriptor&&);
-    FileDescriptor(DescriptorHolder&&);
+    ~FileDescriptor();
+    FileDescriptor& operator=(FileDescriptor&&);
+
+    bool valid() const;
+    handler_type get_system_handler() const;
+    handler_type release();
+    int make_nonblock();
+
     ssize_t read(char*, ssize_t);
     ssize_t write(const char*, ssize_t);
 
 protected:
-    FileDescriptor(int);
+    handler_type handler;
 };
 
 using Socket = FileDescriptor;
 
-std::string read(FileDescriptor&, size_t = FileDescriptor::max_request_size);
+FileDescriptor accept_client(FileDescriptor&);
+FileDescriptor make_server_socket(Port port);
+
 ssize_t write(FileDescriptor&, string_view);
-
-DescriptorHolder accept_client(DescriptorRef);
-DescriptorHolder make_server_socket(Port);
-int accept_client_helper(int);
-int set_nonblock(int);
-
 ssize_t write_failure(Socket&, int, string_view);
 ssize_t write_response(Socket&, int, size_t);
+std::string read(FileDescriptor&, size_t = FileDescriptor::max_request_size);
 
 }  // namespace pkr

@@ -1,11 +1,9 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
-#include <fstream>
-
+#include "include/server.hpp"
 #include "include/defs.hpp"
 #include "include/filesystem.hpp"
 #include "include/log.hpp"
-#include "include/server.hpp"
 #include "include/utils.hpp"
 
 namespace pkr {
@@ -14,7 +12,7 @@ Server::Server(const ServerConfig& cfg)
     : max_threads(cfg.max_threads)
     , working_dir(cfg.working_dir)
     , server_socket(make_server_socket(cfg.port))
-    , epoll(make_epoll(server_socket))
+    , epoll(server_socket)
     , helpers(max_threads, *this) {
     for (auto& helper : helpers) {
         threads.emplace_back([&helper] { helper.start(); });
@@ -48,42 +46,45 @@ void Server::finish() {
 }
 
 void Server::do_get(Socket& client, const Message& msg) const {
-    log.message(msg.url + " requested");
-    std::string file_name = working_dir;
-    file_name += (msg.url == "/" || msg.url == "") ? "index.html" : msg.url;
-    std::ifstream file(file_name);
-    if (!file) {
-        log.message(file_name + " not found. 404");
-        write_failure(client, 404, "Not Found");
-    } else {
-        log.message(file_name + " opened");
-        write_response(client, 200, fs::file_size(file_name));
-        char buffer[max_request_size];
-        do {
-            file.read(buffer, sizeof(buffer));
-            const auto len = file.gcount();
-            if (write(client, {buffer, static_cast<size_t>(len)}) != len) {
-                log.message("socket.write error");
-            }
-        } while (file.good());
+    log.message(msg.url + " at " + msg.head.at("Host") + " requested");
+    forward(client, msg);
+}
+
+bool Server::forward(Socket& client, const Message& msg) const {
+    log.message("Forwarding to " + msg.head.at("Host"));
+    const auto& host = msg.head.at("Host");
+    auto host_sock = connect_to_server(make_serv_addr(host, msg.service));
+    if (!host_sock.valid()) {
+        log.error("Unable to download from " + host + " (connect failed)");
+        return;
     }
+    const auto req = join_message(msg);
+    if (write(host_sock, req) != static_cast<ssize_t>(req.size())) {
+        log.error("Unable to send request to " + host);
+        return;
+    }
+    return read(host_sock);
 }
 
 void Server::serve(Socket& client) const {
     const auto request = read(client);
-    const auto header = find_header(request);
-    const auto msg = parse_header(header);
-    switch (msg.method) {
-        case Method::GET:
-            do_get(client, msg);
-            break;
-        case Method::POST:
-            // do_post(client, cmd_arg);
-            break;
-        default:
-            write_failure(client, 400, "Bad Request");
-            log.message("invalid command");
-            break;
+    Message msg(request);
+
+    using VPS = std::vector<std::pair<string_view, string_view>>;
+    for (auto pp : VPS{{"Connection", "close"}, {"Proxy-Connection", ""}}) {
+        auto pos = msg.head.find(pp.first);
+        if (pos != msg.head.end()) {
+            if (pp.second.size() == 0) {
+                msg.head.erase(pos);
+            } else {
+                pos->second = pp.second;
+            }
+        }
+    }
+    if (!forward(client, msg)) {
+        write_failure(client, 500, "Internal Server Error");
+    } else {
+        write(client, response);
     }
 }
 
@@ -96,10 +97,12 @@ void Server::share_clients(ServerThread& dest) {
 }
 
 ServerThread::ServerThread(Server& p)
-    : parent(p) {}
+    : parent(p) {
+}
 
 ServerThread::ServerThread(const ServerThread& other)
-    : ServerThread(other.parent) {}
+    : ServerThread(other.parent) {
+}
 
 void ServerThread::start() {
     while (parent.enabled || !clients.empty()) {
@@ -107,6 +110,7 @@ void ServerThread::start() {
         while (!clients.empty()) {
             Socket client(std::move(clients.front()));
             clients.pop_front();
+            client.make_nonblock();
             parent.serve(client);
         }
         cv.wait(lock, [this] { return !clients.empty() || !parent.enabled; });

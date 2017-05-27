@@ -1,3 +1,5 @@
+// Copyright 2017, Pavel Korozevtsev.
+
 #include <cstring>
 
 #include <iostream>

@@ -1,3 +1,6 @@
+#! /usr/bin/python3
+# Copyright 2017, Pavel Korozevtsev.
+
 from random import randint as ri
 import test
 

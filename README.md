@@ -58,6 +58,6 @@ config.txt должен содержать одну запись на одну �
 ### Автор
 Корозевцев Павел<br />
 email: paxakor@yandex.ru<br />
-[github](github.com/paxakor)<br />
-[telegram](telegram.me/paxakor)<br />
-[vkontakte](vk.com/paxakor)
+[github](https://github.com/paxakor)<br />
+[telegram](https://telegram.me/paxakor)<br />
+[vkontakte](https://vk.com/paxakor)

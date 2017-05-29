@@ -1,8 +1,10 @@
 // Copyright 2017, Pavel Korozevtsev.
 
+#include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -11,16 +13,19 @@
 #include <cstring>
 
 #include <algorithm>
+#include <experimental/string_view>
+#include <fstream>
 #include <functional>
 #include <iterator>
 #include <list>
+#include <memory>
 #include <string>
 #include <thread>
 
 #include "stopwatch.hpp"
 
-enum { FILESZ = 4096 };
-using File = char[FILESZ];
+using File = std::string;
+using std::experimental::string_view;
 
 void passert(bool val, const char* msg, bool use_perror = true) {
     if (!val) {
@@ -33,66 +38,85 @@ void passert(bool val, const char* msg, bool use_perror = true) {
     }
 }
 
-const char* find_response_body(const File& buffer) {
-    static const char pattern[] = "\r\n\r\n";
-    return strlen(pattern) + std::search(buffer, buffer + strlen(buffer),
-                                         std::begin(pattern),
-                                         std::begin(pattern) + strlen(pattern));
+File readfd(int fd) {
+    enum { buf_sz = 4096 };
+    ssize_t len;
+    File file;
+    char buffer[buf_sz];
+    while ((len = read(fd, buffer, buf_sz)) > 0) {
+        file.append(buffer, buffer + len);
+    }
+    return file;
+}
+
+File readfile(const std::string& fname) {
+    auto fd = open(fname.c_str(), O_RDONLY);
+    passert(fd > 0, "can't open file");
+    const auto file = readfd(fd);
+    close(fd);
+    return file;
+}
+
+string_view find_after(const std::string& buffer, const std::string& pattern) {
+    const auto begin = std::search(buffer.begin(), buffer.end(),
+                                   pattern.begin(), pattern.end()) +
+                       pattern.size();
+    return {&*begin, static_cast<size_t>(std::distance(begin, buffer.end()))};
+}
+
+string_view find_response_body(const File& buffer) {
+    return find_after(buffer, "\r\n\r\n");
+}
+
+int connect_to_server(const struct addrinfo* serv_addr) {
+    for (auto rp = serv_addr; rp; rp = rp->ai_next) {
+        auto sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (sockfd == -1) {
+            continue;
+        }
+        if (connect(sockfd, rp->ai_addr, rp->ai_addrlen) != -1) {
+            return sockfd;
+        }
+        close(sockfd);
+    }
+    return -1;
 }
 
 void send_request(const std::string& request,
-                  const File file,
-                  const sockaddr_in& serv_addr) {
-    const auto sockfd = socket(AF_INET, SOCK_STREAM, 0);
+                  const File& file,
+                  std::shared_ptr<struct addrinfo> serv_addr) {
+    auto sockfd = connect_to_server(serv_addr.get());
     passert(sockfd >= 0, "can't open socket");
-    passert(connect(sockfd, reinterpret_cast<const sockaddr*>(&serv_addr),
-                    sizeof(serv_addr)) >= 0,
-            "can't connect");
     passert(write(sockfd, request.c_str(), request.size()) ==
                 static_cast<ssize_t>(request.size()),
             "can't write");
-    File buffer;
-    ssize_t sz = 0;
-    ssize_t len;
-    while ((len = read(sockfd, buffer + sz, FILESZ - sz)) > 0) {
-        sz += len;
-    }
+    const auto buffer = readfd(sockfd);
     close(sockfd);
-    buffer[sz] = 0;
     const auto body = find_response_body(buffer);
-    passert(strncmp(file, body, FILESZ) == 0, "files are not equal", false);
+    passert(file == body, "files are not equal", false);
 }
 
-sockaddr_in make_serv_addr(const char* hostname, int portno) {
-    sockaddr_in serv_addr;
-    hostent* server = gethostbyname(hostname);
-    if (!server) {
-        fprintf(stderr, "ERROR, no such host\n");
-        exit(1);
-    }
-    memset(&serv_addr, 0, sizeof(serv_addr));
-    memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(portno);
-    return serv_addr;
-}
+std::shared_ptr<struct addrinfo> make_serv_addr(const char* hostname,
+                                                const char* port) {
+    struct addrinfo hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = 0;
+    hints.ai_protocol = 0;
 
-void readfile(const char* fname, File& file) {
-    FILE* fp = fopen(fname, "r");
-    passert(fp, "can't open file");
-    size_t sz = 0;
-    size_t len;
-    while (sz + 1 < FILESZ && (len = fread(file + sz, 1, FILESZ - sz, fp))) {
-        passert(!ferror(fp), "can't read file");
-        sz += len;
+    struct addrinfo* result = nullptr;
+    auto s = getaddrinfo(hostname, port, &hints, &result);
+    if (s != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
+        return nullptr;
     }
-    fclose(fp);
-    file[sz] = 0;
+    return {result, freeaddrinfo};
 }
 
 template <typename Int, typename... Ts>
 void test(Int sessions, const Ts&... args) {
-    for (int i = 0; i < sessions; ++i) {
+    for (Int i = 0; i < sessions; ++i) {
         send_request(args...);
     }
 }
@@ -107,18 +131,17 @@ std::list<std::thread> make_threads(int thread_count, const Ts&... args) {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 4) {
+    if (argc < 6) {
         fprintf(stderr, "usage: %s hostname port file sessions threads\n",
                 argv[0]);
         return 1;
     }
     const auto request =
         "GET / HTTP/1.0\r\nHost: " + std::string(argv[1]) + "\r\n\r\n";
-    const auto serv_addr = make_serv_addr(argv[1], atoi(argv[2]));
+    const auto serv_addr = make_serv_addr(argv[1], argv[2]);
     const auto sessions = atoi(argv[4]);
     const auto thread_count = atoi(argv[5]);
-    File file;
-    readfile(argv[3], file);
+    const auto file = readfile(argv[3]);
     Stopwatch sw("DDoS");
     auto threads =
         make_threads(thread_count, sessions, request, file, serv_addr);

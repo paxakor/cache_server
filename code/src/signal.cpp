@@ -2,6 +2,7 @@
 
 #include <csignal>
 
+#include "include/server.hpp"
 #include "include/signal.hpp"
 
 namespace pkr {

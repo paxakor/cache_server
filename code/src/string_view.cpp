@@ -11,24 +11,28 @@ namespace pkr {
 
 string_view::string_view(const std::string& s)
     : ptr(s.data())
-    , len(s.size()) {}
+    , len(s.size()) {
+}
 
 string_view::string_view(const_pointer p, string_view::size_type l)
     : ptr(p)
-    , len(l) {}
+    , len(l) {
+}
 
 string_view::string_view(const_pointer p)
     : ptr(p)
-    , len(strlen(p)) {}
+    , len(strlen(p)) {
+}
 
 string_view::string_view(const_iterator begin, const_iterator end)
-    : string_view(begin, static_cast<size_type>(end - begin)) {}
+    : string_view(begin, static_cast<size_type>(end - begin)) {
+}
 
-string_view::iterator string_view::begin() {
+string_view::iterator string_view::begin() const {
     return ptr;
 }
 
-string_view::iterator string_view::end() {
+string_view::iterator string_view::end() const {
     return ptr + len;
 }
 
@@ -56,8 +60,8 @@ string_view::const_reference string_view::front() const {
     return ptr[0];
 }
 
-string_view::const_reference
-string_view::operator[](string_view::size_type pos) const {
+string_view::const_reference string_view::
+operator[](string_view::size_type pos) const {
     return ptr[pos];
 }
 

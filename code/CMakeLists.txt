@@ -8,8 +8,10 @@ add_subdirectory(tests)
 set(SOURCES
     src/args_parser.cpp
     src/epoll.cpp
+    src/librarian.cpp
     src/log.cpp
     src/main.cpp
+    src/net_utils.cpp
     src/parser.cpp
     src/server.cpp
     src/signal.cpp
@@ -18,7 +20,7 @@ set(SOURCES
     src/utils.cpp
     )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wpedantic -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wpedantic")
 
 
 
@@ -58,6 +60,6 @@ elseif(USE_EXPSTL_FILESYSTEM OR USE_STL_FILESYSTEM)
     target_link_libraries(server stdc++fs)
 endif()
 
-
+target_link_libraries(server pthread)
 
 file(COPY tests/config.txt DESTINATION ./)

@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "include/server.hpp"
-
 namespace pkr {
+
+class Server;
 
 class SignalHandler {
 public:

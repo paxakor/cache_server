@@ -10,6 +10,7 @@ namespace pkr {
 
 class string_view {
 public:
+    // clang-format off
     using iterator        = const char*;
     using const_iterator  = const char*;
     using pointer         = char*;
@@ -18,6 +19,7 @@ public:
     using const_reference = const char&;
     using size_type       = std::size_t;
     using value_type      = char;
+    // clang-format on
 
     string_view() = default;
     string_view(const string_view&) = default;
@@ -28,8 +30,8 @@ public:
     string_view(const_pointer);
     string_view(const_iterator, const_iterator);
 
-    iterator begin();
-    iterator end();
+    iterator begin() const;
+    iterator end() const;
     const_iterator cbegin() const;
     const_iterator cend() const;
 
@@ -61,12 +63,14 @@ protected:
     size_type len = 0;
 };
 
+// clang-format off
 bool operator==(string_view, string_view);
 bool operator!=(string_view, string_view);
 bool operator< (string_view, string_view);
 bool operator<=(string_view, string_view);
 bool operator> (string_view, string_view);
 bool operator>=(string_view, string_view);
+// clang-format on
 
 std::string operator+(string_view, const std::string&);
 std::string operator+(const std::string&, string_view);

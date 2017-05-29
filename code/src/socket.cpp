@@ -8,10 +8,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include <algorithm>
-#include <memory>
 #include <utility>
-#include <vector>
 
 #include "include/log.hpp"
 #include "include/socket.hpp"
@@ -31,40 +28,42 @@ int set_nonblock(int fd) {
 #endif
 }
 
-DescriptorRef::DescriptorRef(const FileDescriptor& fd)
-    : Handler{fd.handler} {}
-
-DescriptorHolder::DescriptorHolder(DescriptorHolder&& other)
-    : Handler{std::move(other.handler)} {
-    other.handler = -1;
-}
-
-DescriptorHolder::DescriptorHolder(int h)
-    : Handler{h} {}
-
 FileDescriptor::FileDescriptor(int h)
-    : Handler{h} {
-    if (handler < 0) {
-        log.error("Invalid fildes");
-    } else {
-        set_nonblock(handler);
-    }
+    : handler{h} {
 }
 
 FileDescriptor::FileDescriptor(FileDescriptor&& other)
-    : Handler{std::move(other.handler)} {
-    other.handler = -1;
-}
-
-FileDescriptor::FileDescriptor(DescriptorHolder&& other)
-    : Handler{std::move(other.handler)} {
+    : handler{std::move(other.handler)} {
     other.handler = -1;
 }
 
 FileDescriptor::~FileDescriptor() {
-    if (handler != -1) {
+    if (valid()) {
         close(handler);
     }
+    handler = -1;
+}
+
+FileDescriptor& FileDescriptor::operator=(FileDescriptor&& other) {
+    this->~FileDescriptor();
+    new (this) FileDescriptor(std::move(other));
+    return *this;
+}
+
+bool FileDescriptor::valid() const {
+    return handler != -1;
+}
+
+FileDescriptor::handler_type FileDescriptor::get_system_handler() const {
+    return handler;
+}
+
+FileDescriptor::handler_type FileDescriptor::release() {
+    return exchange(handler, -1);
+}
+
+int FileDescriptor::make_nonblock() {
+    return set_nonblock(get_system_handler());
 }
 
 ssize_t FileDescriptor::read(char* dest, ssize_t nbyte) {
@@ -104,24 +103,25 @@ ssize_t write(FileDescriptor& fd, string_view buf) {
     return fd.write(buf.data(), buf.size());
 }
 
-DescriptorHolder make_server_socket(Port port) {
-    DescriptorHolder serv(socket(AF_INET, SOCK_STREAM, 0));
+Socket make_server_socket(Port port) {
+    Socket serv(socket(PF_INET, SOCK_STREAM, 0));
     sockaddr_in address;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
     auto try_bind = [&address, &serv] {
-        return bind(serv.handler, reinterpret_cast<const sockaddr*>(&address),
+        return bind(serv.get_system_handler(),
+                    reinterpret_cast<const sockaddr*>(&address),
                     sizeof(address)) == 0;
     };
     enum { tries = 8 };
     for (int i = 0; i < tries && !try_bind(); ++i) {
         log.message("Unable to create server socket on port " +
-                    std::to_string(port) + " (bind failed): " +
-                    Logger::errstr());
+                    std::to_string(port) +
+                    " (bind failed): " + Logger::errstr());
         address.sin_port = htons(++port);
     }
-    if (listen(serv.handler, SOMAXCONN) < 0) {
+    if (listen(serv.get_system_handler(), SOMAXCONN) < 0) {
         log.fatal_error("Unable to create server socket (listen failed): " +
                         Logger::errstr());
     } else {
@@ -130,22 +130,18 @@ DescriptorHolder make_server_socket(Port port) {
     return serv;
 }
 
-int accept_client_helper(int serv_sock_fd) {
+Socket accept_client(Socket& serv_sock_fd) {
     sockaddr_in client_address;
     socklen_t client_address_size = sizeof(client_address);
-    const auto new_client_handler =
-        ::accept(serv_sock_fd, reinterpret_cast<sockaddr*>(&client_address),
-                 &client_address_size);
-    if (new_client_handler >= 0) {
+    Socket client(accept(serv_sock_fd.get_system_handler(),
+                         reinterpret_cast<sockaddr*>(&client_address),
+                         &client_address_size));
+    if (client.valid()) {
         char ip[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &client_address.sin_addr, ip, sizeof(ip));
         log.access(ip, ntohs(client_address.sin_port));
     }
-    return new_client_handler;
-}
-
-DescriptorHolder accept_client(DescriptorRef serv_sock) {
-    return {accept_client_helper(serv_sock.handler)};
+    return client;
 }
 
 ssize_t write_failure(Socket& cls, int status, string_view msg) {

@@ -6,7 +6,6 @@
 #include <string>
 
 #include "include/string_view.hpp"
-#include "include/utils.hpp"
 
 namespace pkr {
 
@@ -20,14 +19,18 @@ enum class Method {
 };
 
 struct Message {
+    Message(string_view);
+
     Method method = Method::UNKNOWN;
-    std::string url;
+    std::string service = "http";
+    std::string version = "1.0";
+    string_view url;
+
     Header head;
-    std::string body;
+    string_view body;
+    string_view original;
 };
 
-Message parse_header(string_view);
-std::string debug_header(const Message&);
-string_view find_header(string_view);
+std::string join_message(const Message&);
 
 }  // namespace pkr

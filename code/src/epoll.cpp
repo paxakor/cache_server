@@ -1,5 +1,7 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
+#include <unistd.h>
+
 #include <iterator>
 #include <utility>
 
@@ -8,19 +10,19 @@
 
 namespace pkr {
 
-Epoll make_epoll(DescriptorRef serv) {
-    return {serv.handler};
+Socket make_event_socket(epoll_event ee) {
+    return Socket{ee.data.fd};
 }
 
-DescriptorHolder make_event_socket(epoll_event ee) {
-    return {ee.data.fd};
-}
-
-Epoll::Epoll(int serv_fd)
+Epoll::Epoll(Socket& serv)
     : epoll_fd(epoll_create1(0))
-    , server_fd(serv_fd)
+    , server_fd(serv)
     , valid_count(0) {
     add(server_fd, EPOLLIN);
+}
+
+Epoll::~Epoll() {
+    close(epoll_fd);
 }
 
 int Epoll::wait() {
@@ -34,24 +36,22 @@ int Epoll::wait() {
 }
 
 void Epoll::accept_all() {
-    int fd;
-    while ((fd = accept_client_helper(server_fd)) >= 0) {
-        add(fd);
+    Socket sock;
+    while ((sock = accept_client(server_fd)).valid()) {
+        add(sock);
+        sock.release();
     }
 }
 
-void Epoll::add(int fd, uint32_t flags) {
+void Epoll::add(Socket& sock, uint32_t flags) {
+    sock.make_nonblock();
+    const auto fd = sock.get_system_handler();
     struct epoll_event event;
     event.data.fd = fd;
     event.events = flags;
-    set_nonblock(fd);
     if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &event) < 0) {
         log.message("epoll_ctl (add) failed: " + Logger::errstr());
     }
-}
-
-void Epoll::add(int fd) {
-    add(fd, EPOLLIN | EPOLLONESHOT /*| EPOLLET*/);
 }
 
 Epoll::iterator Epoll::begin() {
@@ -98,7 +98,8 @@ Socket Epoll::iterator::operator*() {
 }
 
 void Epoll::iterator::skip_serv_fd() {
-    while (iter != parent.events_end() && iter->data.fd == parent.server_fd) {
+    while (iter != parent.events_end() &&
+           iter->data.fd == parent.server_fd.get_system_handler()) {
         ++iter;
     }
 }

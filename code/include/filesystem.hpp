@@ -2,6 +2,7 @@
 
 #pragma once
 
+// clang-format off
 #ifdef USE_BOOST_FILESYSTEM
     #include <boost/filesystem.hpp>
     namespace fs = boost::filesystem;
@@ -14,6 +15,7 @@
     #include <filesystem>
     namespace fs = std::filesystem;
 #else
+// clang-format on
 
 #include <cstdint>
 #include <string>

@@ -15,7 +15,8 @@
 namespace pkr {
 
 ArgList::ArgList(int argc, char** argv)
-    : args(argv, argv + argc) {}
+    : args(argv, argv + argc) {
+}
 
 bool ArgList::check_flag(const std::string& flag) const {
     return std::find(args.begin(), args.end(), flag) != args.end();
@@ -56,12 +57,14 @@ std::string ServerArgs::config_file() const {
 }
 
 void ServerArgs::print_usage() const {
+    // clang-format off
     std::cout <<
         "Usage: " << list.get_arg(0) << " [flags]...\n"
         "Flags:\n"
         "  -c <file>:  read configuration from <file>\n"
         "  -h, --help: print this message and exit\n"
         << std::flush;
+    // clang-format on
     std::exit(0);
 }
 

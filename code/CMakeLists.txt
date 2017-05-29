@@ -8,6 +8,7 @@ add_subdirectory(tests)
 set(SOURCES
     src/args_parser.cpp
     src/epoll.cpp
+    src/librarian.cpp
     src/log.cpp
     src/main.cpp
     src/net_utils.cpp

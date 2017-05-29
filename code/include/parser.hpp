@@ -28,6 +28,7 @@ struct Message {
 
     Header head;
     string_view body;
+    string_view original;
 };
 
 std::string join_message(const Message&);

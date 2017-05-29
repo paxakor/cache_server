@@ -65,7 +65,8 @@ void parse_header(string_view header, Message& msg) {
     }
 }
 
-Message::Message(string_view req) {
+Message::Message(string_view req)
+    : original(req) {
     static const string_view delim("\r\n\r\n");
     auto pos = std::search(req.begin(), req.end(), delim.begin(), delim.end());
     parse_header({req.begin(), pos}, *this);

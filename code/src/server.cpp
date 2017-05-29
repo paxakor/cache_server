@@ -45,9 +45,35 @@ void Server::finish() {
     }
 }
 
-std::string Server::forward(const Message& msg) {
-    log.message("Forwarding to " + msg.head.at("Host"));
+std::string Server::do_get(Message msg) {
+    using VPS = std::vector<std::pair<string_view, string_view>>;
+    for (auto pp : VPS{{"Connection", "close"}, {"Proxy-Connection", ""}}) {
+        auto pos = msg.head.find(pp.first);
+        if (pos != msg.head.end()) {
+            if (pp.second.size() == 0) {
+                msg.head.erase(pos);
+            } else {
+                pos->second = pp.second;
+            }
+        }
+    }
     const auto& host = msg.head.at("Host");
+    const auto file = librarian.find(host, msg.url);
+    return file ? *file : *librarian.add(host, msg.url, forward(msg));
+}
+
+std::string Server::do_something(Message msg) {
+    switch (msg.method) {
+        case Method::GET:
+            return do_get(msg);
+        default:
+            return forward(msg);
+    }
+}
+
+std::string Server::forward(Message msg) {
+    const auto& host = msg.head.at("Host");
+    log.message("Forwarding to " + host);
     auto host_sock = connect_to_server(make_serv_addr(host, msg.service));
     if (!host_sock.valid()) {
         log.error("Unable to download from " + host + " (connect failed)");
@@ -64,19 +90,8 @@ std::string Server::forward(const Message& msg) {
 void Server::serve(Socket& client) {
     const auto request = read(client);
     Message msg(request);
-
-    using VPS = std::vector<std::pair<string_view, string_view>>;
-    for (auto pp : VPS{{"Connection", "close"}, {"Proxy-Connection", ""}}) {
-        auto pos = msg.head.find(pp.first);
-        if (pos != msg.head.end()) {
-            if (pp.second.size() == 0) {
-                msg.head.erase(pos);
-            } else {
-                pos->second = pp.second;
-            }
-        }
-    }
-    const auto response = forward(msg);
+    DO_DEBUG(log.message("Header:\n" + join_message(msg)));
+    const auto response = do_something(msg);
     if (response.empty()) {
         write_failure(client, 500, "Internal Server Error");
     } else {

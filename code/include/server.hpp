@@ -11,6 +11,7 @@
 
 #include "include/args_parser.hpp"
 #include "include/epoll.hpp"
+#include "include/librarian.hpp"
 #include "include/net_utils.hpp"
 #include "include/parser.hpp"
 #include "include/socket.hpp"
@@ -26,8 +27,10 @@ public:
     void start();
     void finish();
     void share_clients(ServerThread&);
-    static std::string forward(const Message&);
-    static void serve(Socket&);
+    std::string do_get(Message);
+    std::string do_something(Message);
+    std::string forward(Message);
+    void serve(Socket&);
 
 public:
     volatile bool enabled = true;
@@ -38,6 +41,7 @@ public:
     std::list<std::thread> threads;
     std::mutex clients_mutex;
     std::vector<ServerThread> helpers;
+    Librarian librarian;
 };
 
 class ServerThread {

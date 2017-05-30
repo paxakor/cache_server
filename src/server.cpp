@@ -1,5 +1,7 @@
 // Copyright 2016-2017, Pavel Korozevtsev.
 
+#include <unistd.h>
+
 #include "include/server.hpp"
 #include "include/defs.hpp"
 #include "include/filesystem.hpp"
@@ -27,6 +29,11 @@ Server::~Server() {
 
 void Server::start() {
     log.message("Server started");
+    std::thread(&Server::start_main_thread, this).detach();
+    pause();
+}
+
+void Server::start_main_thread() {
     size_t index = 0;
     while (enabled) {
         epoll.wait();

@@ -25,6 +25,7 @@ public:
     Server(const ServerConfig&);
     ~Server();
     void start();
+    void start_main_thread();
     void finish();
     void share_clients(ServerThread&);
     std::string do_get(Message);

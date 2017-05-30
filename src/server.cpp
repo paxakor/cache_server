@@ -30,10 +30,9 @@ void Server::start() {
     size_t index = 0;
     while (enabled) {
         epoll.wait();
-        std::thread accepter([this] { epoll.accept_all(); });
+        epoll.accept_all();
         share_clients(helpers[index]);
         index = (index + 1) % max_threads;
-        accepter.join();
     }
 }
 

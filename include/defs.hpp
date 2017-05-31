@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cinttypes>
+
 namespace pkr {
 
 #ifdef DEBUG

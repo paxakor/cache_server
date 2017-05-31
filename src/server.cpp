@@ -2,10 +2,10 @@
 
 #include <unistd.h>
 
-#include "include/server.hpp"
 #include "include/defs.hpp"
 #include "include/filesystem.hpp"
 #include "include/log.hpp"
+#include "include/server.hpp"
 #include "include/utils.hpp"
 
 namespace pkr {
@@ -69,7 +69,13 @@ std::string Server::do_get(Message msg) {
 }
 
 std::string Server::do_something(Message msg) {
+    if (msg.head.find("Host") == msg.head.end() ||
+        msg.head.at("Host") == "localhost") {
+        return "";
+    }
     switch (msg.method) {
+        case Method::UNKNOWN:
+            return "";
         case Method::GET:
             return do_get(msg);
         default:

@@ -4,6 +4,7 @@
 from os import remove
 from sys import argv
 from threading import Thread 
+from time import time
 import subprocess as sp
 
 errors = 0
@@ -88,8 +89,10 @@ def main(args):
     for_all(get_original, pages)
 
     get_via_proxy.port = args[1]
+    start_time = time()
     threads = run_threads(pages, args)
     for t in threads: t.join()
+    print("Ended in {} seconds".format(time() - start_time))
     if errors == 0:
         remove_files(pages, len(threads))
     return 0

@@ -1,3 +1,0 @@
-dir /home/paxakor/programs/projects/server/repo/code/tests
-port 31337
-max_threads 4
